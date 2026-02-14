@@ -1,0 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Monoton&display=swap');
+@import "tailwindcss";
+
+@theme{
+    --font-family-display: "Monoton", "sans-serif"
+}

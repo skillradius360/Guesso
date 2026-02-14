@@ -1,0 +1,180 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+
+type Point = {
+  x: number;
+  y: number;
+};
+
+export default function App() {
+  const [connectionStatus, setConnectionStatus] = useState<
+    "connected" | "disconnected" | "connecting"
+  >("connecting");
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const drawing = useRef(false);
+  const lastPoint = useRef<Point | null>(null);
+
+  // -----------------------------
+  // ✅ Draw Line Function (Stable)
+  // -----------------------------
+  const drawLine = useCallback(
+    (from: Point, to: Point, emit: boolean) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+
+      ctx.stroke();
+      ctx.closePath();
+
+      // ✅ Send to server
+      if (emit && wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(
+          JSON.stringify({
+            event: "draw",
+            from,
+            to,
+          })
+        );
+      }
+    },
+    []
+  );
+
+  // -----------------------------
+  // ✅ WebSocket Setup
+  // -----------------------------
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:3000");
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("WS Connected");
+      setConnectionStatus("connected");
+    };
+
+    ws.onclose = () => {
+      console.log("WS Disconnected");
+      setConnectionStatus("disconnected");
+    };
+
+    // ✅ Receive draw events
+    ws.onmessage = (msg) => {
+      const data = JSON.parse(msg.data);
+
+      if (data.event === "draw") {
+        drawLine(data.from, data.to, false);
+      }
+
+      if (data.event === "clear") {
+        clearCanvas(false);
+      }
+    };
+
+    return () => ws.close();
+  }, [drawLine]);
+
+  // -----------------------------
+  // ✅ Mouse Handlers
+  // -----------------------------
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    drawing.current = true;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    lastPoint.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!drawing.current || !lastPoint.current) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    const newPoint = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+
+    drawLine(lastPoint.current, newPoint, true);
+
+    lastPoint.current = newPoint;
+  };
+
+  const handleMouseUp = () => {
+    drawing.current = false;
+    lastPoint.current = null;
+  };
+
+  // -----------------------------
+  // ✅ Clear Canvas Function
+  // -----------------------------
+  const clearCanvas = (emit: boolean) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // send clear event
+    if (emit && wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          event: "clear",
+        })
+      );
+    }
+  };
+
+  return (
+    <div style={{ padding: 20 }}>
+      <h2>🎨 Multiplayer Free Draw Canvas</h2>
+
+      <p>Status: {connectionStatus}</p>
+
+      <button
+        onClick={() => clearCanvas(true)}
+        style={{
+          padding: "8px 12px",
+          marginBottom: "10px",
+          cursor: "pointer",
+        }}
+      >
+        Clear Canvas
+      </button>
+
+      <br />
+
+      <canvas
+        ref={canvasRef}
+        width={700}
+        height={450}
+        style={{
+          border: "2px solid black",
+          background: "white",
+          cursor: "crosshair",
+        }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      />
+    </div>
+  );
+}
