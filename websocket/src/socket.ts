@@ -12,8 +12,10 @@ type RoomSchema = {
         string,
         {
             user: WebSocket
-            from: { x: number, y: number }
-            to: { x: number, y: number }
+            from: { x: number, y: number },
+            to: { x: number, y: number },
+            eventType:"create"|"join"|"broadcast",
+            joinId?:number
         }
     >
 }
@@ -75,7 +77,7 @@ function createRoom(ws: WebSocket, roomId: string) {
     else {
 
         ws.send(JSON.stringify({
-            "event": "CREATE",
+            "event": "create",
             "msg": "room exists"
         }))
     }
@@ -86,14 +88,16 @@ function joinRoom(ws: WebSocket, roomId: string, username: string, from: {x:numb
         lobby[roomId][username] = {
             user: ws,
             from,
-            to
+            to,
+            eventType:"join",
+            
         }
         console.log(lobby)
     }
     else {
 
         ws.send(JSON.stringify({
-            "event": "JOIN",
+            "event": "join",
             "msg": "room does not exists"
         }))
     }
@@ -107,6 +111,36 @@ function broadcast(roomId: string, username: string,from:string,to:string) {
         if (name === username) return;
 
         if (player.user.readyState === WebSocket.OPEN) {
+
+
+            player.user.send(
+                JSON.stringify({
+                    event: "broadcast",
+                    from,
+                    to,
+                })
+            );
+        }
+    });
+}
+
+function changeEvent(roomId: string, username: string,from:string,to:string){
+    // check player type(current or queued)
+    // check
+        if (!lobby[roomId]) return;
+        const roomLen = Object.keys(lobby[roomId]).length
+
+    
+   Object.entries(lobby[roomId]).forEach(([name, player]) => {
+        if (name === username) {
+            player.eventType="join"
+        }
+
+        else if (player.user.readyState === WebSocket.OPEN) {
+                    if(player.eventType!=="join" && name!==username){
+                        const random = Math.random()*roomLen-1
+                    }
+
             player.user.send(
                 JSON.stringify({
                     event: "broadcast",
