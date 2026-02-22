@@ -29,6 +29,13 @@ wss.on('connection', function connection(ws) {
         else if (message.event == "broadcast") {
             broadcast(message.roomId, message.username, message.from, message.to);
         }
+        else if (message.event == "switch") {
+            changeEvent(message.roomId);
+            // changeEvent(message.roomId, message.username)
+        }
+        else if (message.event == "sendAll") {
+            sendFullData(message.roomId);
+        }
     });
     // ws.send('something');
 });
@@ -43,23 +50,27 @@ function createRoom(ws, roomId) {
     }
     else {
         ws.send(JSON.stringify({
-            "event": "CREATE",
+            "event": "create",
             "msg": "room exists"
         }));
     }
 }
 function joinRoom(ws, roomId, username, from, to) {
     if (lobby[roomId]) {
+        const roomLen = Object.keys(lobby[roomId]).length || 5;
+        const random = Math.floor(Math.random() * roomLen);
         lobby[roomId][username] = {
             user: ws,
             from,
-            to
+            to,
+            eventType: "join",
+            joinId: random, score: 0
         };
         console.log(lobby);
     }
     else {
         ws.send(JSON.stringify({
-            "event": "JOIN",
+            "event": "join",
             "msg": "room does not exists"
         }));
     }
@@ -75,6 +86,72 @@ function broadcast(roomId, username, from, to) {
                 event: "broadcast",
                 from,
                 to,
+            }));
+        }
+    });
+}
+// function changeEvent(roomId: string, username: string) {
+//     // check player type(current or queued)
+//     // change the event as the index of the player
+//     //  count the score 
+//     // send to client
+//     if (!lobby[roomId]) return;
+//     Object.entries(lobby[roomId]).forEach(([name, player]) => {
+//         let restrictedNum = 0
+//             console.log(username)
+//         // if(player.eventType!=="bro")
+//         if (name === username && player.eventType == "broadcast") {
+//             let room = lobby[roomId]!;
+//             (room[username]!).eventType = "join"
+//             restrictedNum = player.joinId!
+//         }
+//         if (player.user.readyState === WebSocket.OPEN) {
+//             if (player.eventType !== "join" && name !== username) {
+//                 const random = Math.floor(Math.random() * 5)
+//                 if (random != restrictedNum && player.joinId == random) {
+//                     const room = lobby[roomId]!;
+//                     (room[username]!).eventType = "broadcast"
+//                 }
+//             }
+// console.log(lobby)
+//             // player.user.send(
+//             //     JSON.stringify({
+//             //         event: "broadcast",
+//             //     })
+//             // );
+//         }
+//     })
+// }
+function changeEvent(roomId) {
+    if (!lobby[roomId])
+        return;
+    const room = lobby[roomId];
+    const players = Object.keys(room);
+    if (players.length === 0)
+        return;
+    // Find current broadcaster
+    let currentIndex = players.findIndex(name => room[name].eventType === "broadcast");
+    // Remove broadcast from current
+    if (currentIndex !== -1) {
+        room[(players[currentIndex])].eventType = "join";
+    }
+    // Pick next player (circular)
+    const nextIndex = currentIndex === -1
+        ? 0
+        : (currentIndex + 1) % players.length;
+    room[(players[nextIndex])].eventType = "broadcast";
+    console.log("TURN SWITCHED:", players[nextIndex]);
+    sendFullData(roomId);
+}
+function sendFullData(roomId) {
+    if (!lobby[roomId])
+        return;
+    Object.entries(lobby[roomId]).forEach(([name, player]) => {
+        if (player.user.readyState == ws_1.WebSocket.OPEN) {
+            player.user.send(JSON.stringify({
+                "event": "sendAll",
+                "roomId": roomId,
+                "roomData": lobby
             }));
         }
     });
