@@ -75,6 +75,21 @@ function joinRoom(ws, roomId, username, from, to) {
         }));
     }
 }
+// function broadcast(roomId: string, username: string, from: string, to: string) {
+//     if (!lobby[roomId]) return;
+//     Object.entries(lobby[roomId]).forEach(([name, player]) => {
+//         if (name === username) return;
+//         if (player.user.readyState === WebSocket.OPEN) {
+//             player.user.send(
+//                 JSON.stringify({
+//                     event: "broadcast",
+//                     from,
+//                     to,
+//                 })
+//             );
+//         }
+//     });
+// }
 function broadcast(roomId, username, from, to) {
     if (!lobby[roomId])
         return;
@@ -90,38 +105,6 @@ function broadcast(roomId, username, from, to) {
         }
     });
 }
-// function changeEvent(roomId: string, username: string) {
-//     // check player type(current or queued)
-//     // change the event as the index of the player
-//     //  count the score 
-//     // send to client
-//     if (!lobby[roomId]) return;
-//     Object.entries(lobby[roomId]).forEach(([name, player]) => {
-//         let restrictedNum = 0
-//             console.log(username)
-//         // if(player.eventType!=="bro")
-//         if (name === username && player.eventType == "broadcast") {
-//             let room = lobby[roomId]!;
-//             (room[username]!).eventType = "join"
-//             restrictedNum = player.joinId!
-//         }
-//         if (player.user.readyState === WebSocket.OPEN) {
-//             if (player.eventType !== "join" && name !== username) {
-//                 const random = Math.floor(Math.random() * 5)
-//                 if (random != restrictedNum && player.joinId == random) {
-//                     const room = lobby[roomId]!;
-//                     (room[username]!).eventType = "broadcast"
-//                 }
-//             }
-// console.log(lobby)
-//             // player.user.send(
-//             //     JSON.stringify({
-//             //         event: "broadcast",
-//             //     })
-//             // );
-//         }
-//     })
-// }
 function changeEvent(roomId) {
     if (!lobby[roomId])
         return;
@@ -143,6 +126,22 @@ function changeEvent(roomId) {
     console.log("TURN SWITCHED:", players[nextIndex]);
     sendFullData(roomId);
 }
+// function changeEvent(roomId: string) {
+//     const room = lobby[roomId] as any
+//     if (!room) return
+//     const players = Object.keys(room)
+//     if (players.length == 0) return
+//     let currentIndex = players.findIndex(name => room[name]?.eventType === "broadcast");
+//     if (currentIndex !== -1) {
+//         const player = players[currentIndex]
+//         room[players[currentIndex] as string].event = "join"
+//     }
+//     const nextPlayer = currentIndex == -1 ? 0 : currentIndex + 1 % players.length
+//     room[(players[nextPlayer]!)].eventType = "broadcast"
+//     console.log(`player switched ${players[nextPlayer]}`)
+//     // send refreshed data
+//     sendFullData(roomId)
+// }
 function sendFullData(roomId) {
     if (!lobby[roomId])
         return;

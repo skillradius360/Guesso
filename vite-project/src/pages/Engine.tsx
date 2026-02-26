@@ -1,24 +1,50 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 type coord = {
     x: number,
     y: number
+}
+
+type RoomSchema = {
+    [roomName: string]: Record<
+        string,
+        {
+            user: WebSocket
+            from: { x: number, y: number } | 0,
+            to: { x: number, y: number } | 0,
+            eventType: "create" | "join" | "broadcast",
+            joinId?: number,
+            score?: number | 0
+        }
+    >
 }
 export function Engine() {
     const canRef = useRef<HTMLCanvasElement>(null)
     const currSocket = useRef<WebSocket>(null)
     const [err, setErr] = useState(false)
-    const { params } = useParams()
+    const [username, setUsername] = useState<string>("")
+    const [fullData, setFullData] = useState<RoomSchema>({})
+
 
 
     const drawing = useRef<boolean>(false)
     const startPoint = useRef<coord>(null)
     const endPoint = useRef<coord>(null)
+    const [searchParams] = useSearchParams();
 
-    function changeTurn(word: string) {
+
+    function changeTurn(roomId: string, username: string) {
+        // if(currSocket.current!= WebSocket.CONNECTING){
+        //     return 
+        // }
         // get random word from server --> draw it -->check chat --->add point
+        currSocket.current?.send(JSON.stringify({
+            "event": "switch",
+            "username": username,
+            roomId: roomId
+        }))
     }
-
+    // user joins --> server sends all data --> frontend picks username ---> changers status 
 
     // CANVAS HANDLER
     const tracker = useCallback((from: coord, to: coord, cast?: boolean) => {
@@ -41,16 +67,17 @@ export function Engine() {
         if (cast && currSocket.current?.readyState == WebSocket.OPEN) {
             currSocket.current.send(JSON.stringify({
                 "event": "broadcast",
-                "roomId": `${params}`,
+                "roomId": `${searchParams.get("roomId")}`,
                 "from": from,
                 "to": to
-            }))
+            }))  
         }
-    }, [drawing, params])
+    }, [drawing,    searchParams])
 
 
     // message handler
     useEffect(() => {
+        console.log(searchParams.get("username"))
         const socket = new WebSocket("ws://localhost:3000")
         if (!socket) return
         currSocket.current = socket
@@ -58,29 +85,56 @@ export function Engine() {
         socket.onopen = () => {
             socket.send(JSON.stringify({
                 "event": "join",
-                "roomId": params,
+                "roomId": searchParams.get("roomId"),
+                "username":searchParams.get("username")
 
             }))
 
             console.log("connection established")
         }
+
+        const xx = setInterval(() => {
+            socket.send(JSON.stringify({
+                "event": "sendAll",
+                "roomId": searchParams.get("roomId")
+            }))
+
+            changeTurn(searchParams.get("roomId") as string, searchParams.get("username") as string)
+        }, 10000)
+
+
         socket.onmessage = (message) => {
             const data = JSON.parse(message.data || "")
             if (data.event == "error") {
                 setErr(true)
             }
-            else if (data.event == "changeTurn") {
-                changeTurn(message.data) //*********************
-            }
-            // else if(data.event=="draw"){
-            // }
-            tracker(data.from, data.to)
 
+            //    recieve sendAll data
+            if (data.event == "sendAll") {
+                setFullData(data.roomData) 
+            }
+
+            const rId = searchParams.get("roomId")
+            if(!rId) return
+
+            // Object.entries(data?.roomData[rId]).forEach(([name, player]) => {
+                if(data.event=="broadcast"  && data.eventType!="broadcast"){
+                    tracker(data.from,data.to)
+                }
+    // console.log("Found me:", name);
+    // console.log("My status:", player);
+
+
+//    if(data.eventType=="broadcast"){
+//         tracker()
+//     }
         }
 
-        return () => socket.close()
+        return () => { socket.close(); clearInterval(xx) }
 
-    }, [])
+    }, [searchParams])
+
+
 
 
     function handleMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -94,20 +148,28 @@ export function Engine() {
         }
     }
 
-    function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
+  function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (!drawing.current) return
 
-        const dimensions = e.currentTarget.getBoundingClientRect()
+    const rId = searchParams.get("roomId")
+    const user = searchParams.get("username")
+    if (!rId || !user) return
 
-        const newPoints = {
-            x: e.clientX - dimensions.x,
-            y: e.clientY - dimensions.y
-        }
+    const myStatus = fullData?.[rId]?.forEach((e)=>{
+returne.eventType
+    })
+    if (myStatus !== "broadcast") return
 
-        tracker(startPoint.current!, newPoints, true)
+    const dimensions = e.currentTarget.getBoundingClientRect()
 
-        startPoint.current = newPoints
-
+    const newPoints = {
+        x: e.clientX - dimensions.x,
+        y: e.clientY - dimensions.y
     }
+
+    tracker(startPoint.current!, newPoints, true)
+    startPoint.current = newPoints
+}
 
 
     function handleMouseUp(e: React.MouseEvent<HTMLCanvasElement>) {

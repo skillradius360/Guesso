@@ -152,7 +152,8 @@ function broadcast(roomId: string, username: string, from: string, to: string) {
                     event: "broadcast",
                     from,
                     to,
-                    eventType:
+                    eventType:player.eventType
+                
                 })
             );
         }
@@ -163,61 +164,61 @@ function broadcast(roomId: string, username: string, from: string, to: string) {
 
 
 
-// function changeEvent(roomId: string) {
-//     if (!lobby[roomId]) return;
-
-//     const room = lobby[roomId] as any;
-
-//     const players = Object.keys(room);
-//     if (players.length === 0) return;
-
-//     // Find current broadcaster
-//     let currentIndex = players.findIndex(
-//         name => room[name].eventType === "broadcast"
-//     );
-
-//     // Remove broadcast from current
-//     if (currentIndex !== -1) {
-//         room[(players[currentIndex]!)].eventType = "join";
-//     }
-
-//     // Pick next player (circular)
-//     const nextIndex =
-//         currentIndex === -1
-//             ? 0
-//             : (currentIndex + 1) % players.length;
-
-//     room[(players[nextIndex]!)].eventType = "broadcast";
-
-//     console.log("TURN SWITCHED:", players[nextIndex]);
-
-//     sendFullData(roomId);
-// }
-
-
 function changeEvent(roomId: string) {
-    const room = lobby[roomId] as any
-    if (!room) return
+    if (!lobby[roomId]) return;
 
-    const players = Object.keys(room)
-    if (players.length == 0) return
+    const room = lobby[roomId] as any;
 
-    let currentIndex = players.findIndex(name => room[name]?.eventType === "broadcast");
+    const players = Object.keys(room);
+    if (players.length === 0) return;
 
+    // Find current broadcaster
+    let currentIndex = players.findIndex(
+        name => room[name].eventType === "broadcast"
+    );
 
+    // Remove broadcast from current
     if (currentIndex !== -1) {
-        const player = players[currentIndex]
-        room[players[currentIndex] as string].event = "join"
+        room[(players[currentIndex]!)].eventType = "join";
     }
 
-    const nextPlayer = currentIndex == -1 ? 0 : currentIndex + 1 % players.length
-    room([players[nextPlayer]]!).eventType = "broadcast"
+    // Pick next player (circular)
+    const nextIndex =
+        currentIndex === -1
+            ? 0
+            : (currentIndex + 1) % players.length;
 
-    console.log(`player switched ${players[nextPlayer]}`)
+    room[(players[nextIndex]!)].eventType = "broadcast";
 
-    // send refreshed data
-    sendFullData(roomId)
+    console.log("TURN SWITCHED:", players[nextIndex]);
+
+    sendFullData(roomId);
 }
+
+
+// function changeEvent(roomId: string) {
+//     const room = lobby[roomId] as any
+//     if (!room) return
+
+//     const players = Object.keys(room)
+//     if (players.length == 0) return
+
+//     let currentIndex = players.findIndex(name => room[name]?.eventType === "broadcast");
+
+
+//     if (currentIndex !== -1) {
+//         const player = players[currentIndex]
+//         room[players[currentIndex] as string].event = "join"
+//     }
+
+//     const nextPlayer = currentIndex == -1 ? 0 : currentIndex + 1 % players.length
+//     room[(players[nextPlayer]!)].eventType = "broadcast"
+
+//     console.log(`player switched ${players[nextPlayer]}`)
+
+//     // send refreshed data
+//     sendFullData(roomId)
+// }
 
 
 function sendFullData(roomId: string) {
