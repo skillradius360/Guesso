@@ -156,6 +156,8 @@ export function Engine() {
     if (!rId || !user) return
 
     const myStatus = fullData?.[rId]?.[user]?.eventType
+
+    
     if (myStatus !== "broadcast") return
 
     const dimensions = e.currentTarget.getBoundingClientRect()
