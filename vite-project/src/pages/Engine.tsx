@@ -155,9 +155,7 @@ export function Engine() {
     const user = searchParams.get("username")
     if (!rId || !user) return
 
-    const myStatus = fullData?.[rId]?.forEach((e)=>{
-returne.eventType
-    })
+    const myStatus = fullData?.[rId]?.[user]?.eventType
     if (myStatus !== "broadcast") return
 
     const dimensions = e.currentTarget.getBoundingClientRect()
