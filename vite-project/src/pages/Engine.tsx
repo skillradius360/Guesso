@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { word_generator } from '../utils/generator'
+
+
 type coord = {
     x: number,
     y: number
@@ -34,15 +37,26 @@ export function Engine() {
 
 
     function changeTurn(roomId: string, username: string) {
-        // if(currSocket.current!= WebSocket.CONNECTING){
-        //     return 
-        // }
+      
         // get random word from server --> draw it -->check chat --->add point
         currSocket.current?.send(JSON.stringify({
             "event": "switch",
             "username": username,
             roomId: roomId
         }))
+    }
+
+
+    function generateWord(roomId:string){
+       const  generatedWord = word_generator()
+        currSocket.current?.send(JSON.stringify({
+            "event":"generateWord",
+            "roomId":roomId,
+            "word":generatedWord
+
+
+        }))
+
     }
     // user joins --> server sends all data --> frontend picks username ---> changers status 
 
@@ -100,6 +114,7 @@ export function Engine() {
             }))
 
             changeTurn(searchParams.get("roomId") as string, searchParams.get("username") as string)
+            generateWord()
         }, 10000)
 
 
@@ -121,13 +136,8 @@ export function Engine() {
                 if(data.event=="broadcast"  && data.eventType!="broadcast"){
                     tracker(data.from,data.to)
                 }
-    // console.log("Found me:", name);
-    // console.log("My status:", player);
 
 
-//    if(data.eventType=="broadcast"){
-//         tracker()
-//     }
         }
 
         return () => { socket.close(); clearInterval(xx) }
@@ -157,7 +167,6 @@ export function Engine() {
 
     const myStatus = fullData?.[rId]?.[user]?.eventType
 
-    
     if (myStatus !== "broadcast") return
 
     const dimensions = e.currentTarget.getBoundingClientRect()

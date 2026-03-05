@@ -9,6 +9,8 @@ let lobby = {
 //     "user999": { user: "ws", x: 5, y: 15 }
 // }
 };
+let generatedWord = "";
+let roomChat = {};
 // lobby["room1"]["user777"] = {
 //   user: "ws",
 //   x: 0,
@@ -35,6 +37,9 @@ wss.on('connection', function connection(ws) {
         }
         else if (message.event == "sendAll") {
             sendFullData(message.roomId);
+        }
+        else if (message.event == "generateWord") {
+            getGenWord(message.word);
         }
     });
     // ws.send('something');
@@ -101,6 +106,7 @@ function broadcast(roomId, username, from, to) {
                 event: "broadcast",
                 from,
                 to,
+                eventType: player.eventType
             }));
         }
     });
@@ -112,13 +118,11 @@ function changeEvent(roomId) {
     const players = Object.keys(room);
     if (players.length === 0)
         return;
-    // Find current broadcaster
     let currentIndex = players.findIndex(name => room[name].eventType === "broadcast");
-    // Remove broadcast from current
     if (currentIndex !== -1) {
         room[(players[currentIndex])].eventType = "join";
     }
-    // Pick next player (circular)
+    // this is a circular queue like implementation to change user turns
     const nextIndex = currentIndex === -1
         ? 0
         : (currentIndex + 1) % players.length;
@@ -155,10 +159,16 @@ function sendFullData(roomId) {
         }
     });
 }
-// function updateCoordinates(roomId:string,username:string,x:string,y:string){
-// const room = lobby[roomId][username]
-// lobby = {...room,x,y}
-// }
+function getGenWord(wordGen) {
+    const word = wordGen;
+    if (!word) {
+        console.error("no word generated");
+        return;
+    }
+    generatedWord = word;
+    console.log(generatedWord);
+}
+// ************************************************************************chat part *********************************************************************
 server.listen(3000);
 console.log("listening on 3000");
 //# sourceMappingURL=socket.js.map

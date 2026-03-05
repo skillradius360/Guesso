@@ -4,7 +4,6 @@ import { parse } from 'url';
 import { v4 as uuid } from 'uuid';
 
 
-
 const server: Server = createServer()
 
 type RoomSchema = {
@@ -20,6 +19,20 @@ type RoomSchema = {
         }
     >
 }
+type chatter = {
+    [roomName: string]: Record<string, {
+        username:string,
+        word: string,
+        correct: boolean
+    }
+    >
+}
+type chatType ={
+      username:string,
+        word:string,
+        correct:boolean
+    
+}
 
 let lobby: RoomSchema =
 {
@@ -29,6 +42,9 @@ let lobby: RoomSchema =
     // }
 }
 
+let generatedWord: string = ""
+
+let roomChat:chatType[] = []
 // lobby["room1"]["user777"] = {
 //   user: "ws",
 //   x: 0,
@@ -65,6 +81,17 @@ wss.on('connection', function connection(ws) {
         else if (message.event == "sendAll") {
             sendFullData(message.roomId)
         }
+
+        else if (message.event == "generateWord") {
+            getGenWord(message.word)
+        }
+
+        // ******************************************************
+
+        else if(message.event == "createChat"){
+            createChat(message.username,message.roomId, generatedWord) // read chat --- check word --- else pass
+        }
+       
     });
 
     // ws.send('something');
@@ -79,6 +106,8 @@ wss.on('connection', function connection(ws) {
 console.log(lobby);
 
 
+
+
 function createRoom(ws: WebSocket, roomId: string) {
     if (!lobby[roomId]) {
         lobby[roomId] = {}
@@ -91,6 +120,7 @@ function createRoom(ws: WebSocket, roomId: string) {
         }))
     }
 }
+
 
 function joinRoom(ws: WebSocket, roomId: string, username: string, from: { x: number, y: number }, to: { x: number, y: number }) {
     if (lobby[roomId]) {
@@ -152,8 +182,8 @@ function broadcast(roomId: string, username: string, from: string, to: string) {
                     event: "broadcast",
                     from,
                     to,
-                    eventType:player.eventType
-                
+                    eventType: player.eventType
+
                 })
             );
         }
@@ -172,23 +202,22 @@ function changeEvent(roomId: string) {
     const players = Object.keys(room);
     if (players.length === 0) return;
 
-    // Find current broadcaster
     let currentIndex = players.findIndex(
         name => room[name].eventType === "broadcast"
     );
 
-    // Remove broadcast from current
     if (currentIndex !== -1) {
         room[(players[currentIndex]!)].eventType = "join";
     }
-
-    // Pick next player (circular)
+    // this is a circular queue like implementation to change user turns
     const nextIndex =
         currentIndex === -1
             ? 0
             : (currentIndex + 1) % players.length;
 
     room[(players[nextIndex]!)].eventType = "broadcast";
+
+
 
     console.log("TURN SWITCHED:", players[nextIndex]);
 
@@ -235,12 +264,51 @@ function sendFullData(roomId: string) {
     })
 }
 
+function getGenWord(wordGen:string) {
+    const word = wordGen
+    if (!word) {
+        console.error("no word generated")
+        return
+    }
+    generatedWord = word;
+    console.log(generatedWord)
 
-// function updateCoordinates(roomId:string,username:string,x:string,y:string){
-// const room = lobby[roomId][username]
-// lobby = {...room,x,y}
 
+}
+// ************************************************************************chat part *********************************************************************
+
+
+// type chatter = {
+//     [roomName: string]: Record<string, {
+//         user: WebSocket,
+//         word: string,
+//         correct: boolean
+//     }
+//     >
 // }
+
+// function createChat(username:string,roomId:number, generatedWord:string ){
+
+// if(!(username || roomId || generatedWord)){
+//     console.error("chat parameters missing")
+//     return
+// }
+
+// if(!roomChat[roomId]){
+//     roomChat[roomId]= {}
+// }
+
+// if(generatedWord){
+//     roomChat[roomId][username]={
+
+//     }
+// }
+
+
+
+
+}
+
 
 server.listen(3000)
 console.log("listening on 3000")
