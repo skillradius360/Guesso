@@ -11,12 +11,6 @@ let lobby = {
 };
 let generatedWord = "";
 let roomChat = {};
-// lobby["room1"]["user777"] = {
-//   user: "ws",
-//   x: 0,
-//   y: 0
-// };
-// 1:{ram:{Ws,{x,y}}}
 const wss = new ws_1.WebSocketServer({ server });
 wss.on('connection', function connection(ws) {
     ws.on('error', console.error);
@@ -40,6 +34,10 @@ wss.on('connection', function connection(ws) {
         }
         else if (message.event == "generateWord") {
             getGenWord(message.word);
+        }
+        // ******************************************************
+        else if (message.event == "createChat") {
+            createChat(message.username, message.roomId, message.word); // read chat --- check word --- else pass
         }
     });
     // ws.send('something');
@@ -146,6 +144,7 @@ function changeEvent(roomId) {
 //     // send refreshed data
 //     sendFullData(roomId)
 // }
+getGenWord("d");
 function sendFullData(roomId) {
     if (!lobby[roomId])
         return;
@@ -160,15 +159,58 @@ function sendFullData(roomId) {
     });
 }
 function getGenWord(wordGen) {
-    const word = wordGen;
-    if (!word) {
+    if (!wordGen) {
         console.error("no word generated");
         return;
     }
-    generatedWord = word;
+    generatedWord = wordGen;
     console.log(generatedWord);
 }
 // ************************************************************************chat part *********************************************************************
+function createChat(username, roomId, genWord) {
+    console.log(genWord);
+    console.log(generatedWord);
+    if (!(username || roomId || genWord)) {
+        console.error("chat parameters missing");
+        return;
+    }
+    if (!lobby[roomId])
+        return;
+    if (!roomChat[roomId]) {
+        roomChat[roomId] = {};
+    }
+    if (generatedWord) {
+        roomChat[roomId][username] = {
+            username,
+            word: genWord,
+            correct: genWord == generatedWord ? true : false
+        };
+    }
+    console.log(roomChat[roomId][username]?.correct);
+    if (generatedWord == genWord) {
+        Object.entries(lobby[roomId]).forEach(([name, player]) => {
+            if (player.user.readyState === ws_1.WebSocket.OPEN) {
+                player.user.send(JSON.stringify({
+                    event: "createChat",
+                    username,
+                    word: genWord,
+                    correct: genWord == generatedWord ? true : false
+                }));
+            }
+        });
+    }
+    Object.entries(lobby[roomId]).forEach(([name, player]) => {
+        if (player.user.readyState === ws_1.WebSocket.OPEN) {
+            player.user.send(JSON.stringify({
+                username,
+                word: genWord,
+                correct: genWord == generatedWord ? true : false,
+            }));
+        }
+    });
+    console.log("The generated word is : -->");
+    console.log(generatedWord);
+}
 server.listen(3000);
 console.log("listening on 3000");
 //# sourceMappingURL=socket.js.map

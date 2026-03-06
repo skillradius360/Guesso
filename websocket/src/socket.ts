@@ -1,7 +1,6 @@
 import { WebSocket, WebSocketServer } from "ws";
 import { createServer, Server, IncomingMessage, ServerResponse } from 'http'
-import { parse } from 'url';
-import { v4 as uuid } from 'uuid';
+
 
 
 const server: Server = createServer()
@@ -27,11 +26,12 @@ type chatter = {
     }
     >
 }
-type chatType ={
-      username:string,
+type chatType ={[roomId:string]: Record<string,{
+    username:string,
         word:string,
         correct:boolean
     
+    }> 
 }
 
 let lobby: RoomSchema =
@@ -44,13 +44,10 @@ let lobby: RoomSchema =
 
 let generatedWord: string = ""
 
-let roomChat:chatType[] = []
-// lobby["room1"]["user777"] = {
-//   user: "ws",
-//   x: 0,
-//   y: 0
-// };
-// 1:{ram:{Ws,{x,y}}}
+let roomChat:chatType = {
+
+}
+
 
 
 
@@ -89,7 +86,7 @@ wss.on('connection', function connection(ws) {
         // ******************************************************
 
         else if(message.event == "createChat"){
-            createChat(message.username,message.roomId, generatedWord) // read chat --- check word --- else pass
+            createChat(message.username,message.roomId, message.word) // read chat --- check word --- else pass
         }
        
     });
@@ -146,26 +143,6 @@ function joinRoom(ws: WebSocket, roomId: string, username: string, from: { x: nu
     }
 }
 
-
-// function broadcast(roomId: string, username: string, from: string, to: string) {
-//     if (!lobby[roomId]) return;
-
-//     Object.entries(lobby[roomId]).forEach(([name, player]) => {
-//         if (name === username) return;
-
-//         if (player.user.readyState === WebSocket.OPEN) {
-
-
-//             player.user.send(
-//                 JSON.stringify({
-//                     event: "broadcast",
-//                     from,
-//                     to,
-//                 })
-//             );
-//         }
-//     });
-// }
 
 
 function broadcast(roomId: string, username: string, from: string, to: string) {
@@ -224,31 +201,7 @@ function changeEvent(roomId: string) {
     sendFullData(roomId);
 }
 
-
-// function changeEvent(roomId: string) {
-//     const room = lobby[roomId] as any
-//     if (!room) return
-
-//     const players = Object.keys(room)
-//     if (players.length == 0) return
-
-//     let currentIndex = players.findIndex(name => room[name]?.eventType === "broadcast");
-
-
-//     if (currentIndex !== -1) {
-//         const player = players[currentIndex]
-//         room[players[currentIndex] as string].event = "join"
-//     }
-
-//     const nextPlayer = currentIndex == -1 ? 0 : currentIndex + 1 % players.length
-//     room[(players[nextPlayer]!)].eventType = "broadcast"
-
-//     console.log(`player switched ${players[nextPlayer]}`)
-
-//     // send refreshed data
-//     sendFullData(roomId)
-// }
-
+getGenWord("d")
 
 function sendFullData(roomId: string) {
     if (!lobby[roomId]) return
@@ -265,12 +218,12 @@ function sendFullData(roomId: string) {
 }
 
 function getGenWord(wordGen:string) {
-    const word = wordGen
-    if (!word) {
+    
+    if (!wordGen) {
         console.error("no word generated")
         return
     }
-    generatedWord = word;
+    generatedWord = wordGen
     console.log(generatedWord)
 
 
@@ -278,34 +231,62 @@ function getGenWord(wordGen:string) {
 // ************************************************************************chat part *********************************************************************
 
 
-// type chatter = {
-//     [roomName: string]: Record<string, {
-//         user: WebSocket,
-//         word: string,
-//         correct: boolean
-//     }
-//     >
-// }
-
-// function createChat(username:string,roomId:number, generatedWord:string ){
-
-// if(!(username || roomId || generatedWord)){
-//     console.error("chat parameters missing")
-//     return
-// }
-
-// if(!roomChat[roomId]){
-//     roomChat[roomId]= {}
-// }
-
-// if(generatedWord){
-//     roomChat[roomId][username]={
-
-//     }
-// }
 
 
+function createChat(username:string,roomId:number, genWord:string ){
 
+    console.log(genWord)
+    console.log(generatedWord)
+if(!(username || roomId || genWord)){
+    console.error("chat parameters missing")
+    return
+}
+
+if(!lobby[roomId]) return
+
+if(!roomChat[roomId]){
+    roomChat[roomId]= {}
+}
+
+if(generatedWord){
+    roomChat[roomId][username]={
+        username,
+        word:genWord,
+        correct:genWord==generatedWord?true:false
+    }
+}
+console.log(roomChat[roomId][username]?.correct)
+if(generatedWord==genWord){
+
+    
+    
+    Object.entries(lobby[roomId]!).forEach(([name, player]) => {
+        if (player.user.readyState === WebSocket.OPEN){
+            player.user.send(JSON.stringify({
+            event:"createChat",
+            username,
+            word:genWord,
+            correct:genWord==generatedWord?true:false
+    })
+)
+        }
+    })
+}
+
+
+  Object.entries(lobby[roomId]!).forEach(([name, player]) => {
+        if (player.user.readyState === WebSocket.OPEN){
+            player.user.send(JSON.stringify({
+            username,
+            word:genWord,
+            correct:genWord==generatedWord?true:false,
+            
+    })
+)
+        }
+    })
+console.log("The generated word is : -->")
+console.log(generatedWord)
 
 }
 
