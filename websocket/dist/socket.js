@@ -78,21 +78,6 @@ function joinRoom(ws, roomId, username, from, to) {
         }));
     }
 }
-// function broadcast(roomId: string, username: string, from: string, to: string) {
-//     if (!lobby[roomId]) return;
-//     Object.entries(lobby[roomId]).forEach(([name, player]) => {
-//         if (name === username) return;
-//         if (player.user.readyState === WebSocket.OPEN) {
-//             player.user.send(
-//                 JSON.stringify({
-//                     event: "broadcast",
-//                     from,
-//                     to,
-//                 })
-//             );
-//         }
-//     });
-// }
 function broadcast(roomId, username, from, to) {
     if (!lobby[roomId])
         return;
@@ -128,22 +113,6 @@ function changeEvent(roomId) {
     console.log("TURN SWITCHED:", players[nextIndex]);
     sendFullData(roomId);
 }
-// function changeEvent(roomId: string) {
-//     const room = lobby[roomId] as any
-//     if (!room) return
-//     const players = Object.keys(room)
-//     if (players.length == 0) return
-//     let currentIndex = players.findIndex(name => room[name]?.eventType === "broadcast");
-//     if (currentIndex !== -1) {
-//         const player = players[currentIndex]
-//         room[players[currentIndex] as string].event = "join"
-//     }
-//     const nextPlayer = currentIndex == -1 ? 0 : currentIndex + 1 % players.length
-//     room[(players[nextPlayer]!)].eventType = "broadcast"
-//     console.log(`player switched ${players[nextPlayer]}`)
-//     // send refreshed data
-//     sendFullData(roomId)
-// }
 getGenWord("d");
 function sendFullData(roomId) {
     if (!lobby[roomId])
@@ -168,7 +137,7 @@ function getGenWord(wordGen) {
 }
 // ************************************************************************chat part *********************************************************************
 function createChat(username, roomId, genWord) {
-    console.log(genWord);
+    // console.log(genWord)
     console.log(generatedWord);
     if (!(username || roomId || genWord)) {
         console.error("chat parameters missing");
@@ -187,29 +156,16 @@ function createChat(username, roomId, genWord) {
         };
     }
     console.log(roomChat[roomId][username]?.correct);
-    if (generatedWord == genWord) {
-        Object.entries(lobby[roomId]).forEach(([name, player]) => {
-            if (player.user.readyState === ws_1.WebSocket.OPEN) {
-                player.user.send(JSON.stringify({
-                    event: "createChat",
-                    username,
-                    word: genWord,
-                    correct: genWord == generatedWord ? true : false
-                }));
-            }
-        });
-    }
     Object.entries(lobby[roomId]).forEach(([name, player]) => {
         if (player.user.readyState === ws_1.WebSocket.OPEN) {
             player.user.send(JSON.stringify({
+                event: "createChat",
                 username,
                 word: genWord,
-                correct: genWord == generatedWord ? true : false,
+                correct: genWord == generatedWord ? true : false
             }));
         }
     });
-    console.log("The generated word is : -->");
-    console.log(generatedWord);
 }
 server.listen(3000);
 console.log("listening on 3000");

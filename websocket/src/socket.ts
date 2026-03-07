@@ -235,7 +235,7 @@ function getGenWord(wordGen:string) {
 
 function createChat(username:string,roomId:number, genWord:string ){
 
-    console.log(genWord)
+    // console.log(genWord)
     console.log(generatedWord)
 if(!(username || roomId || genWord)){
     console.error("chat parameters missing")
@@ -256,10 +256,7 @@ if(generatedWord){
     }
 }
 console.log(roomChat[roomId][username]?.correct)
-if(generatedWord==genWord){
 
-    
-    
     Object.entries(lobby[roomId]!).forEach(([name, player]) => {
         if (player.user.readyState === WebSocket.OPEN){
             player.user.send(JSON.stringify({
@@ -271,22 +268,7 @@ if(generatedWord==genWord){
 )
         }
     })
-}
 
-
-  Object.entries(lobby[roomId]!).forEach(([name, player]) => {
-        if (player.user.readyState === WebSocket.OPEN){
-            player.user.send(JSON.stringify({
-            username,
-            word:genWord,
-            correct:genWord==generatedWord?true:false,
-            
-    })
-)
-        }
-    })
-console.log("The generated word is : -->")
-console.log(generatedWord)
 
 }
 

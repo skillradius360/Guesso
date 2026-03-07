@@ -25,19 +25,21 @@ export function Engine() {
     const canRef = useRef<HTMLCanvasElement>(null)
     const currSocket = useRef<WebSocket>(null)
     const [err, setErr] = useState(false)
-    const [username, setUsername] = useState<string>("")
     const [fullData, setFullData] = useState<RoomSchema>({})
+    const [guess,setGuess] = useState<string>("")
+    
+    const [chat,setChat] = useState<Array<{ username: string, roomId:string , word: string, isTrue: boolean }>>([])
 
 
 
     const drawing = useRef<boolean>(false)
     const startPoint = useRef<coord>(null)
     const endPoint = useRef<coord>(null)
-    const [searchParams] = useSearchParams();
+    const [searchParams] = useSearchParams(); // get url parsed data  froM  here
 
 
     function changeTurn(roomId: string, username: string) {
-      
+
         // get random word from server --> draw it -->check chat --->add point
         currSocket.current?.send(JSON.stringify({
             "event": "switch",
@@ -47,12 +49,12 @@ export function Engine() {
     }
 
 
-    function generateWord(roomId:string){
-       const  generatedWord = word_generator()
+    function generateWord(roomId: string) {
+        const generatedWord = word_generator()
         currSocket.current?.send(JSON.stringify({
-            "event":"generateWord",
-            "roomId":roomId,
-            "word":generatedWord
+            "event": "generateWord",
+            "roomId": roomId,
+            "word": generatedWord
 
 
         }))
@@ -84,9 +86,9 @@ export function Engine() {
                 "roomId": `${searchParams.get("roomId")}`,
                 "from": from,
                 "to": to
-            }))  
+            }))
         }
-    }, [drawing,    searchParams])
+    }, [drawing, searchParams])
 
 
     // message handler
@@ -100,7 +102,7 @@ export function Engine() {
             socket.send(JSON.stringify({
                 "event": "join",
                 "roomId": searchParams.get("roomId"),
-                "username":searchParams.get("username")
+                "username": searchParams.get("username")
 
             }))
 
@@ -114,7 +116,7 @@ export function Engine() {
             }))
 
             changeTurn(searchParams.get("roomId") as string, searchParams.get("username") as string)
-            generateWord()
+            generateWord(searchParams.get("roomId") as string)
         }, 10000)
 
 
@@ -126,17 +128,29 @@ export function Engine() {
 
             //    recieve sendAll data
             if (data.event == "sendAll") {
-                setFullData(data.roomData) 
+                setFullData(data.roomData)
             }
 
             const rId = searchParams.get("roomId")
-            if(!rId) return
+            if (!rId) return
 
             // Object.entries(data?.roomData[rId]).forEach(([name, player]) => {
-                if(data.event=="broadcast"  && data.eventType!="broadcast"){
-                    tracker(data.from,data.to)
-                }
+            if (data.event == "broadcast" && data.eventType != "broadcast") {
+                tracker(data.from, data.to)
+            }
 
+          if (data.event == "createChat") {
+    setChat(prev => [
+        ...prev,
+        {
+            username: data.username!,
+            word: data.word,
+            roomId:data.roomId,
+            isTrue:data.correct
+        }
+    ])
+}
+          
 
         }
 
@@ -158,27 +172,27 @@ export function Engine() {
         }
     }
 
-  function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
-    if (!drawing.current) return
+    function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
+        if (!drawing.current) return
 
-    const rId = searchParams.get("roomId")
-    const user = searchParams.get("username")
-    if (!rId || !user) return
+        const rId = searchParams.get("roomId")
+        const user = searchParams.get("username")
+        if (!rId || !user) return
 
-    const myStatus = fullData?.[rId]?.[user]?.eventType
+        const myStatus = fullData?.[rId]?.[user]?.eventType
 
-    if (myStatus !== "broadcast") return
+        if (myStatus !== "broadcast") return
 
-    const dimensions = e.currentTarget.getBoundingClientRect()
+        const dimensions = e.currentTarget.getBoundingClientRect()
 
-    const newPoints = {
-        x: e.clientX - dimensions.x,
-        y: e.clientY - dimensions.y
+        const newPoints = {
+            x: e.clientX - dimensions.x,
+            y: e.clientY - dimensions.y
+        }
+
+        tracker(startPoint.current!, newPoints, true)
+        startPoint.current = newPoints
     }
-
-    tracker(startPoint.current!, newPoints, true)
-    startPoint.current = newPoints
-}
 
 
     function handleMouseUp(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -186,14 +200,30 @@ export function Engine() {
         drawing.current = false
     }
 
+//  create a chat ---> sends to backend--- > gets broadcasted
+    function createChats(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault()
+
+            currSocket.current?.send(JSON.stringify({
+                event: "createChat",
+                roomId: searchParams.get("roomId" ) as string,
+                username: searchParams.get("username" ) as string,
+                word: guess
+                
+            }))
+        
+
+
+
+    }
     return (
         <div>
 
-            <div className='bg-amber-950 h-screen '>
+            <div className='bg-amber-950 h-screen flex justify-between' >
                 <canvas ref={canRef}
                     height={"200px"}
                     width={"200px"}
-                    className='border-2 border-solid border-black bg-amber-500'
+                    className='border-2 border-solid border-black bg-amber-500 h-40 w-40'
                     onMouseDown={handleMouseDown}
                     onMouseUp={handleMouseUp}
                     onMouseMove={handleMouseMove}
@@ -202,8 +232,33 @@ export function Engine() {
 
 
                 </canvas>
+                <form className=' formClass h-full bg-white w-80' onSubmit={e => createChats(e)}>
+                    <input type="text" name="" id="" className='h-10 w-1/2 border-2 border-solid border-pink-600 ' onChange={e=>setGuess(e.target.value)}/>
+                    <button type='submit' id="" className='h-10 w-20 border-2 border-solid border-red-600 '>submit</button>
+                    
+                </form>
+
+                {chat.map((data,index)=>(
+                    <TextBox
+                    key={index}
+                    username={data.username}
+                    word={data.word}
+                    isTrue={data.isTrue}
+                    />
+                ))}
             </div>
+
         </div>
     )
 }
 
+function TextBox({username,word,isTrue}:{username:string,word:string,isTrue:boolean}){
+    console.log(isTrue)
+    return (
+        <>
+        <div className='flex'>
+            {`${username}: ${word} `}{isTrue?`has guessed it right`:""}
+        </div>
+        </>
+    )
+}
