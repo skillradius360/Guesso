@@ -14,11 +14,14 @@ const words = [
 ]
 
 
-const   randomNum = Math.floor(Math.random()*words.length)
+const   randomNum1 = Math.floor(Math.random()*words.length)
+const   randomNum2 = Math.floor(Math.random()*words.length)
+const   randomNum3 = Math.floor(Math.random()*words.length)
 
-console.log(randomNum)
+console.log(randomNum1)
+console.log(randomNum2)
+console.log(randomNum3)
 export function word_generator(){
 
-    return words[randomNum]
-
+    return {r1:words[randomNum1],r2:words[randomNum2],r3:words[randomNum3]}
 }
