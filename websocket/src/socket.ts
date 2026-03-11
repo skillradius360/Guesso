@@ -64,6 +64,7 @@ wss.on('connection', function connection(ws) {
 
         if (message.event == "create") {
             createRoom(ws, message.roomId)
+            joinRoom(ws,message.roomId,message.username,message.x,message.y)
         }
         else if (message.event == "join") {
             joinRoom(ws, message.roomId, message.username, message.x, message.y)
@@ -115,6 +116,8 @@ function createRoom(ws: WebSocket, roomId: string) {
             "event": "create",
             "msg": "room exists"
         }))
+
+      
     }
 }
 
@@ -202,6 +205,8 @@ function changeEvent(roomId: string) {
 }
 
 getGenWord("d")
+
+
 
 function sendFullData(roomId: string) {
     if (!lobby[roomId]) return

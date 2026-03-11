@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { word_generator } from '../utils/generator'
+import { Link } from 'react-router-dom'
+import { Sockets } from '../utils/sockets'
 
 type coord = {
     x: number,
@@ -23,13 +25,14 @@ type RoomSchema = {
 
 export function Engine() {
     const canRef = useRef<HTMLCanvasElement>(null)
-    const currSocket = useRef<WebSocket | null>(null)
+    const currSocket =  Sockets()
     const chatContainerRef = useRef<HTMLDivElement>(null)
     
     const [err, setErr] = useState(false)
     const [fullData, setFullData] = useState<RoomSchema>({})
     const [guess, setGuess] = useState<string>("")
     const [chat, setChat] = useState<Array<{ username: string, roomId: string, word: string, isTrue: boolean }>>([])
+    // const [words,genWords] =  useState<{"event":string,"roomId":string,"word":{"r1":string,"r2":string,"r3":string}}>({})
 
     const drawing = useRef<boolean>(false)
     const startPoint = useRef<coord | null>(null)
@@ -38,7 +41,9 @@ export function Engine() {
     const roomId = searchParams.get("roomId") || ""
     const username = searchParams.get("username") || ""
 
-    // Auto-scroll chat to bottom
+    // somehow  the websocket context is working
+   
+
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
@@ -55,6 +60,12 @@ export function Engine() {
 
     function generateWord(rId: string) {
         const generatedWord = word_generator()
+
+        // genWords({
+        //     "event": "generateWord",
+        //     "roomId": rId,
+        //     "word": generatedWord
+        // })
         currSocket.current?.send(JSON.stringify({
             "event": "generateWord",
             "roomId": rId,
@@ -108,7 +119,7 @@ export function Engine() {
                 changeTurn(roomId, username)
                 generateWord(roomId)
             }
-        }, 10000)
+        }, 5000)
 
         socket.onmessage = (message) => {
             const data = JSON.parse(message.data || "")
@@ -180,7 +191,7 @@ export function Engine() {
             username: username,
             word: guess
         }))
-        setGuess("") // Clear input after sending
+        setGuess("") 
     }
 
     return (
@@ -188,9 +199,9 @@ export function Engine() {
             {/* Top Navigation */}
             <header className="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="bg-indigo-600 p-2 rounded-lg font-black italic">G</div>
+                    <div className="bg-indigo-600 p-2 rounded-lg font-black italic"><Link to={"/"}>G</Link></div>
                     <div>
-                        <h1 className="text-sm font-bold leading-none">GEMINI DRAW</h1>
+                        <h1 className="text-md font-bold leading-none">Guesso</h1>
                         <span className="text-[10px] text-slate-500 uppercase tracking-widest">Room: {roomId}</span>
                     </div>
                 </div>
@@ -207,7 +218,6 @@ export function Engine() {
             </header>
 
             <div className="flex flex-1 gap-4 overflow-hidden">
-                {/* Scoreboard */}
                 <aside className="w-56 bg-slate-900 border border-slate-800 rounded-2xl p-4 hidden md:flex flex-col">
                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-tighter mb-4">Leaderboard</h2>
                     <div className="space-y-2 overflow-y-auto flex-1">
@@ -283,6 +293,8 @@ function SelectWordBox(){
     
     return (
         <>
+
+
         </>
     )
 }

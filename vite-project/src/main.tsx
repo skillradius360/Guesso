@@ -10,7 +10,7 @@ const router = createBrowserRouter(
         <>
             <Route path='/' element={<Landing />} />
             <Route path='join' element={<Engine />} />
-
+            <Route path="*" element={<Landing/>} />
 
         </>
     )
