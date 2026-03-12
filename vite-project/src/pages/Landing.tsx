@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sockets } from "../utils/sockets";
+import { Sockets } from "../utils/Sockets";
 
 function Landing() {
     const [join, setJoin] = useState<boolean>(false);
     const [create, setCreate] = useState<boolean>(false);
-  
+
 
     const dataSoc = Sockets()
     return (
         <div className="min-h-screen bg-slate-950 flex items-center justify-center flex-col text-slate-100 p-4 relative overflow-hidden">
-            
+
             <style>
                 {`
                     @keyframes floatUp {
@@ -26,7 +26,7 @@ function Landing() {
                     }
                 `}
             </style>
-            
+
             <div className="absolute inset-0 pointer-events-none">
                 {/* Quantity increased to 50 for a dense starfield effect */}
                 {[...Array(50)].map((_, i) => {
@@ -64,16 +64,16 @@ function Landing() {
             <div className="w-full max-w-md flex flex-col items-center gap-8 relative z-10">
                 {/* Main Action Buttons */}
                 <div className="flex gap-4 w-full">
-                    <button 
+                    <button
                         className={`flex-1 h-16 rounded-xl font-black text-xl transition-all active:translate-y-1 active:shadow-none
-                            ${join ? 'bg-indigo-600 shadow-none' : 'bg-emerald-500 shadow-[0_8px_0_rgb(5,150,105)] hover:-translate-y-1'}`} 
+                            ${join ? 'bg-indigo-600 shadow-none' : 'bg-emerald-500 shadow-[0_8px_0_rgb(5,150,105)] hover:-translate-y-1'}`}
                         onClick={() => { setJoin(true); setCreate(false); }}
                     >
                         JOIN
                     </button>
-                    <button 
+                    <button
                         className={`flex-1 h-16 rounded-xl font-black text-xl transition-all active:translate-y-1 active:shadow-none
-                            ${create ? 'bg-indigo-600 shadow-none' : 'bg-amber-500 shadow-[0_8px_0_rgb(180,83,9)] hover:-translate-y-1'}`} 
+                            ${create ? 'bg-indigo-600 shadow-none' : 'bg-amber-500 shadow-[0_8px_0_rgb(180,83,9)] hover:-translate-y-1'}`}
                         onClick={() => { setCreate(true); setJoin(false); }}
                     >
                         CREATE
@@ -100,9 +100,20 @@ function JoinForm({ isActive }: { isActive: boolean }) {
     const [roomId, setRoomId] = useState("");
     const [username, setUsername] = useState("");
     const navigate = useNavigate();
+
+
+    const dataSoc = Sockets()
+    const curr = dataSoc.current
+
     if (!isActive) return null;
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        curr?.send(JSON.stringify({
+        "event": "join",
+        "username":username,
+        "roomId": roomId
+
+    }))
 
         if (roomId && username) navigate(`/join?roomId=${roomId}&username=${username}`);
     };
@@ -113,11 +124,13 @@ function JoinForm({ isActive }: { isActive: boolean }) {
                 type="text" value={username} onChange={(e) => setUsername(e.target.value)}
                 placeholder="Username"
                 className="h-14 bg-slate-800 border-2 border-slate-700 rounded-xl px-4 text-white font-bold focus:border-indigo-500 outline-none transition-all"
+                required
             />
             <input
                 type="text" value={roomId} onChange={(e) => setRoomId(e.target.value)}
                 placeholder="Room ID"
                 className="h-14 bg-slate-800 border-2 border-slate-700 rounded-xl px-4 text-white font-bold focus:border-indigo-500 outline-none transition-all"
+                required
             />
             <button type="submit" className="h-14 bg-indigo-600 rounded-xl font-bold shadow-[0_4px_0_#1e1b4b] hover:bg-indigo-500 active:shadow-none active:translate-y-1 transition-all">
                 Enter Game
@@ -131,10 +144,23 @@ function CreateForm({ isActive }: { isActive: boolean }) {
     const [username, setUsername] = useState("");
     const navigate = useNavigate();
 
+    const dataSoc = Sockets()
+    const curr = dataSoc.current
 
+  
+
+    // if(curr.me)
     if (!isActive) return null;
     const handleSubmit = (e: React.FormEvent) => {
+
         e.preventDefault();
+          curr?.send(JSON.stringify({
+        "event": "create",
+        "username":username,
+        "roomId": roomId
+
+    }))
+  
         if (roomId && username) navigate(`/join?roomId=${roomId}&username=${username}`);
     };
     return (
@@ -144,11 +170,13 @@ function CreateForm({ isActive }: { isActive: boolean }) {
                 type="text" value={username} onChange={(e) => setUsername(e.target.value)}
                 placeholder="Username"
                 className="h-14 bg-slate-800 border-2 border-slate-700 rounded-xl px-4 text-white font-bold focus:border-amber-500 outline-none transition-all"
+                required
             />
             <input
                 type="text" value={roomId} onChange={(e) => setRoomId(e.target.value)}
                 placeholder="Set Room ID"
                 className="h-14 bg-slate-800 border-2 border-slate-700 rounded-xl px-4 text-white font-bold focus:border-amber-500 outline-none transition-all"
+                required
             />
             <button type="submit" className="h-14 bg-amber-600 rounded-xl font-bold shadow-[0_4px_0_#78350f] hover:bg-amber-500 active:shadow-none active:translate-y-1 transition-all">
                 Create Room

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { word_generator } from '../utils/generator'
 import { Link } from 'react-router-dom'
-import { Sockets } from '../utils/sockets'
+import { Sockets } from '../utils/Sockets'
 
 type coord = {
     x: number,
@@ -25,9 +25,9 @@ type RoomSchema = {
 
 export function Engine() {
     const canRef = useRef<HTMLCanvasElement>(null)
-    const currSocket =  Sockets()
+    const currSocket = Sockets()
     const chatContainerRef = useRef<HTMLDivElement>(null)
-    
+
     const [err, setErr] = useState(false)
     const [fullData, setFullData] = useState<RoomSchema>({})
     const [guess, setGuess] = useState<string>("")
@@ -37,13 +37,12 @@ export function Engine() {
     const drawing = useRef<boolean>(false)
     const startPoint = useRef<coord | null>(null)
     const [searchParams] = useSearchParams()
+    const [words,setWords] = useState<{"r1":string,"r2":string,"r3":string}>({})
 
     const roomId = searchParams.get("roomId") || ""
     const username = searchParams.get("username") || ""
 
     // somehow  the websocket context is working
-   
-
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
@@ -66,6 +65,7 @@ export function Engine() {
         //     "roomId": rId,
         //     "word": generatedWord
         // })
+        setWords(word_generator)
         currSocket.current?.send(JSON.stringify({
             "event": "generateWord",
             "roomId": rId,
@@ -99,8 +99,12 @@ export function Engine() {
     }, [roomId])
 
     useEffect(() => {
-        const socket = new WebSocket("ws://localhost:3000")
-        currSocket.current = socket
+        // const socket = new WebSocket("ws://localhost:3000")
+        const socket = currSocket.current!
+        if (!username && !roomId) {
+            console.error("no username and Rid passed")
+            return
+        }
 
         socket.onopen = () => {
             socket.send(JSON.stringify({
@@ -112,6 +116,7 @@ export function Engine() {
 
         const interval = setInterval(() => {
             if (socket.readyState === WebSocket.OPEN) {
+                console.log("connectedxxx")
                 socket.send(JSON.stringify({
                     "event": "sendAll",
                     "roomId": roomId
@@ -125,7 +130,7 @@ export function Engine() {
             const data = JSON.parse(message.data || "")
             if (data.event === "error") setErr(true)
             if (data.event === "sendAll") setFullData(data.roomData)
-            
+
             if (data.event === "broadcast" && data.eventType !== "broadcast") {
                 tracker(data.from, data.to)
             }
@@ -191,11 +196,13 @@ export function Engine() {
             username: username,
             word: guess
         }))
-        setGuess("") 
+        setGuess("")
     }
 
     return (
-        <div className="flex flex-col h-screen bg-slate-950 text-slate-100 p-4 font-sans">
+        <div className="flex flex-col h-screen bg-slate-950 text-slate-100 p-4 font-sans  w-screen "  >
+
+            
             {/* Top Navigation */}
             <header className="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl mb-4">
                 <div className="flex items-center gap-3">
@@ -205,7 +212,7 @@ export function Engine() {
                         <span className="text-[10px] text-slate-500 uppercase tracking-widest">Room: {roomId}</span>
                     </div>
                 </div>
-                
+
                 <div className="text-2xl font-mono tracking-[0.4em] font-black text-yellow-400">
                     _ _ _ _ _
                 </div>
@@ -231,8 +238,9 @@ export function Engine() {
                 </aside>
 
                 {/* Canvas Area */}
-                <main className="flex-1 bg-white rounded-2xl shadow-inner border-4 border-slate-900 relative overflow-hidden">
-                    <canvas 
+                <main className="flex-1 bg-white rounded-2xl shadow-inner border-4 border-slate-900 relative overflow-hidden ">
+                    <SelectWordBox words={words} />
+                    <canvas
                         ref={canRef}
                         width={1000} // High resolution internal
                         height={800}
@@ -247,7 +255,7 @@ export function Engine() {
                 {/* Chat Area */}
                 <aside className="w-80 flex flex-col bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
                     <div className="p-3 border-b border-slate-800 font-bold text-xs text-slate-500 uppercase">Live Chat</div>
-                    
+
                     <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
                         {chat.map((data, index) => (
                             <TextBox key={index} {...data} />
@@ -255,8 +263,8 @@ export function Engine() {
                     </div>
 
                     <form className="p-4 bg-slate-950/50" onSubmit={createChats}>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             placeholder="Type your guess..."
                             className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl py-2 px-4 outline-none focus:border-indigo-500 transition-all text-sm"
                             onChange={e => setGuess(e.target.value)}
@@ -289,11 +297,24 @@ function TextBox({ username, word, isTrue }: { username: string, word: string, i
     )
 }
 
-function SelectWordBox(){
-    
+function SelectWordBox({words}) {
+
     return (
         <>
+        <div className=' w-full absolute top-75 bottom-25 left-65 right-25 z-100'>
 
+            <div className='h-1/2 w-[70%] border-4 border-blue-500 border-solid rounded-2xl 
+            bg-blue-800 opacity-80
+            text-2xl
+            absolute flex justify-center items-center gap-4 inset-0'>
+                {Object.entries(words).map(([key,value])=>(
+                    
+                    
+                    <span key={key} className='border-2 border-solid border-blue-500 px-2 py-1.5 rounded-xl'>{value}</span>
+                    
+                ))}
+            </div>
+                </div>
 
         </>
     )

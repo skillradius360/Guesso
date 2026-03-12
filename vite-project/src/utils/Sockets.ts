@@ -3,7 +3,7 @@
 
    export function  Sockets(){
 
-       const currSocket = useRef<WebSocket | null>(null)
+       const currSocket = useRef<WebSocket>(null)
         
         useEffect(()=>{
             const socket = new WebSocket("ws://localhost:3000")

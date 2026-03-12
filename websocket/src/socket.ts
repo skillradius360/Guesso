@@ -64,7 +64,7 @@ wss.on('connection', function connection(ws) {
 
         if (message.event == "create") {
             createRoom(ws, message.roomId)
-            joinRoom(ws,message.roomId,message.username,message.x,message.y)
+            // joinRoom(ws,message.roomId,message.username,message.x,message.y)
         }
         else if (message.event == "join") {
             joinRoom(ws, message.roomId, message.username, message.x, message.y)
