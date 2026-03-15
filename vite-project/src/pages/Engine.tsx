@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { word_generator } from '../utils/generator'
+// import { word_generator } from '../utils/generator'
 import { Link } from 'react-router-dom'
 import { Sockets } from '../utils/Sockets'
 
@@ -9,19 +9,21 @@ type coord = {
     y: number
 }
 
+type Player = {
+    user: WebSocket;
+    from: { x: number; y: number };
+    to: { x: number; y: number };
+    eventType: "create" | "join" | "broadcast";
+    joinId?: number;
+    score: number;
+};
+
 type RoomSchema = {
-    [roomName: string]: Record<
-        string,
-        {
-            user: WebSocket
-            from: { x: number, y: number } | 0,
-            to: { x: number, y: number } | 0,
-            eventType: "create" | "join" | "broadcast",
-            joinId?: number,
-            score?: number | 0
-        }
-    >
-}
+    [roomName: string]: {
+        generatedWord: string;
+        players: Record<string, Player>;
+    };
+};
 
 export function Engine() {
     const canRef = useRef<HTMLCanvasElement>(null)
@@ -29,7 +31,7 @@ export function Engine() {
     const chatContainerRef = useRef<HTMLDivElement>(null)
 
     const [err, setErr] = useState(false)
-    const [fullData, setFullData] = useState<RoomSchema>({})
+   const [fullData, setFullData] = useState<Record<string, Player>>({});
     const [guess, setGuess] = useState<string>("")
     const [chat, setChat] = useState<Array<{ username: string, roomId: string, word: string, isTrue: boolean }>>([])
     // const [words,genWords] =  useState<{"event":string,"roomId":string,"word":{"r1":string,"r2":string,"r3":string}}>({})
@@ -37,7 +39,11 @@ export function Engine() {
     const drawing = useRef<boolean>(false)
     const startPoint = useRef<coord | null>(null)
     const [searchParams] = useSearchParams()
-    const [words,setWords] = useState<{"r1":string,"r2":string,"r3":string}>({})
+
+    const [words, setWords] = useState<{ "r1": string, "r2": string, "r3": string } | {}>({})
+    const [selectedWord, setSelectedWord] = useState<string>("")
+    const [turn, setTurn] = useState<boolean>(false)
+    const [turnUName, setTurnUName] = useState<string>("")
 
     const roomId = searchParams.get("roomId") || ""
     const username = searchParams.get("username") || ""
@@ -57,21 +63,12 @@ export function Engine() {
         }))
     }
 
-    function generateWord(rId: string) {
-        const generatedWord = word_generator()
+    function getTurn() {
 
-        // genWords({
-        //     "event": "generateWord",
-        //     "roomId": rId,
-        //     "word": generatedWord
-        // })
-        setWords(word_generator)
-        currSocket.current?.send(JSON.stringify({
-            "event": "generateWord",
-            "roomId": rId,
-            "word": generatedWord
-        }))
     }
+
+
+
 
     const tracker = useCallback((from: coord, to: coord, cast?: boolean) => {
         const canvas = canRef.current
@@ -116,20 +113,26 @@ export function Engine() {
 
         const interval = setInterval(() => {
             if (socket.readyState === WebSocket.OPEN) {
-                console.log("connectedxxx")
+                console.log("connected to ws server")
                 socket.send(JSON.stringify({
                     "event": "sendAll",
                     "roomId": roomId
                 }))
                 changeTurn(roomId, username)
-                generateWord(roomId)
+                setTurn(prev => !prev)
+                generateWord()
+
             }
         }, 5000)
 
         socket.onmessage = (message) => {
             const data = JSON.parse(message.data || "")
             if (data.event === "error") setErr(true)
-            if (data.event === "sendAll") setFullData(data.roomData)
+            if (data.event === "sendAll") {
+                setFullData(data.roomData)
+                console.log(data.roomData)
+                setTurn(false)
+            }
 
             if (data.event === "broadcast" && data.eventType !== "broadcast") {
                 tracker(data.from, data.to)
@@ -143,10 +146,24 @@ export function Engine() {
                     isTrue: data.correct
                 }])
             }
+
+
+            // add data to state...
+            if (data.event === "generatedData") {
+                setWords(data.words)
+                console.log(words)
+            }
+
+
+            if (data.event === "yourTurn") {
+                setTurn(true)
+                setTurnUName(data.username)
+            }
         }
 
+
         return () => {
-            socket.close()
+            // socket.close()
             clearInterval(interval)
         }
     }, [roomId, username, tracker])
@@ -157,8 +174,8 @@ export function Engine() {
         if (!rId || !user) return
 
         // Only allow drawing if user has "broadcast" status
-        const myStatus = fullData?.[rId]?.[user]?.eventType
-        if (myStatus !== "broadcast") return
+      const myStatus = fullData[user].eventType == "broadcast"
+        if (!myStatus ) return
 
         drawing.current = true
         const rect = e.currentTarget.getBoundingClientRect()
@@ -196,13 +213,41 @@ export function Engine() {
             username: username,
             word: guess
         }))
-        setGuess("")
+        setGuess("") //cleanup after the chats...
+    }
+
+
+    function handleModal(e: React.MouseEvent) {
+        if (selectedWord) {
+            setTurn(false)
+        }
+
+        currSocket.current?.send(JSON.stringify({
+            event: "setSelectedWord",
+            word: selectedWord,
+            roomId:roomId
+        }))
+    }
+
+        function generateWord() {
+        // const generatedWord = word_generator()
+
+        // genWords({
+        //     "event": "generateWord",
+        //     "roomId": rId,
+        //     "word": generatedWord
+        // })
+        // setWords(word_generator)
+        currSocket.current?.send(JSON.stringify({
+            "event": "generateWord"
+
+        }))
     }
 
     return (
         <div className="flex flex-col h-screen bg-slate-950 text-slate-100 p-4 font-sans  w-screen "  >
 
-            
+
             {/* Top Navigation */}
             <header className="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl mb-4">
                 <div className="flex items-center gap-3">
@@ -228,7 +273,7 @@ export function Engine() {
                 <aside className="w-56 bg-slate-900 border border-slate-800 rounded-2xl p-4 hidden md:flex flex-col">
                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-tighter mb-4">Leaderboard</h2>
                     <div className="space-y-2 overflow-y-auto flex-1">
-                        {fullData[roomId] && Object.entries(fullData[roomId]).map(([name, player]) => (
+                        {fullData && Object.entries(fullData).map(([name, player]) => (
                             <div key={name} className={`flex justify-between items-center p-2 rounded-lg border ${name === username ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-slate-800 border-slate-700'}`}>
                                 <span className="text-sm font-medium truncate w-24">{name}</span>
                                 <span className="text-xs font-bold text-yellow-500">{player.score || 0}</span>
@@ -239,7 +284,15 @@ export function Engine() {
 
                 {/* Canvas Area */}
                 <main className="flex-1 bg-white rounded-2xl shadow-inner border-4 border-slate-900 relative overflow-hidden ">
-                    <SelectWordBox words={words} />
+
+                    <SelectWordBox words={words} active={turn}
+                        setSelectedWord={setSelectedWord}
+                        handleModal={handleModal}
+                        turnUName={turnUName} 
+                        username={username}
+                        />
+
+
                     <canvas
                         ref={canRef}
                         width={1000} // High resolution internal
@@ -297,24 +350,34 @@ function TextBox({ username, word, isTrue }: { username: string, word: string, i
     )
 }
 
-function SelectWordBox({words}) {
+function SelectWordBox({ words, active, setSelectedWord, handleModal, turnUName ,username}: {
+    words: Record<string, string>,
+    active: boolean,
+    setSelectedWord: React.Dispatch<React.SetStateAction<string>>,
+    handleModal: (e: React.MouseEvent) => void,
+    turnUName: string,
+    username:string
+}) {
 
     return (
         <>
-        <div className=' w-full absolute top-75 bottom-25 left-65 right-25 z-100'>
+            <div className={` w-full absolute top-75 bottom-25 left-65 right-25 z-100 ${turnUName==username ? `hidden` : `flex`}`}>
 
-            <div className='h-1/2 w-[70%] border-4 border-blue-500 border-solid rounded-2xl 
-            bg-blue-800 opacity-80
+                <div className={`h-1/2 w-[70%] border-4 border-blue-500 border-solid rounded-2xl 
+            bg-blue-800 opacity-80 
             text-2xl
-            absolute flex justify-center items-center gap-4 inset-0'>
-                {Object.entries(words).map(([key,value])=>(
-                    
-                    
-                    <span key={key} className='border-2 border-solid border-blue-500 px-2 py-1.5 rounded-xl'>{value}</span>
-                    
-                ))}
-            </div>
+            absolute flex justify-center items-center gap-4 inset-0`}>
+                    {Object.entries(words).map(([key, value]) => (
+
+
+                        <button key={key} className='border-2 border-solid border-blue-500 px-2 py-1.5 rounded-xl' onClick={e => {
+                            setSelectedWord(value)
+                            handleModal(e)
+                        }}>{value}</button>
+
+                    ))}
                 </div>
+            </div>
 
         </>
     )

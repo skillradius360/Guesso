@@ -109,11 +109,11 @@ function JoinForm({ isActive }: { isActive: boolean }) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         curr?.send(JSON.stringify({
-        "event": "join",
-        "username":username,
-        "roomId": roomId
+            "event": "join",
+            "username": username,
+            "roomId": roomId
 
-    }))
+        }))
 
         if (roomId && username) navigate(`/join?roomId=${roomId}&username=${username}`);
     };
@@ -147,20 +147,20 @@ function CreateForm({ isActive }: { isActive: boolean }) {
     const dataSoc = Sockets()
     const curr = dataSoc.current
 
-  
+
 
     // if(curr.me)
     if (!isActive) return null;
     const handleSubmit = (e: React.FormEvent) => {
 
         e.preventDefault();
-          curr?.send(JSON.stringify({
-        "event": "create",
-        "username":username,
-        "roomId": roomId
+        curr?.send(JSON.stringify({
+            "event": "create",
+            "username": username,
+            "roomId": roomId
 
-    }))
-  
+        }))
+
         if (roomId && username) navigate(`/join?roomId=${roomId}&username=${username}`);
     };
     return (
