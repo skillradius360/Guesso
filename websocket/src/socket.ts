@@ -47,6 +47,9 @@ wss.on("connection", function connection(ws) {
 
         if (message.event == "create") {
             createRoom(ws, message.roomId);
+            setInterval(()=>{
+                changeEvent(message.roomId)
+            },5000)
         } else if (message.event == "join") {
             joinRoom(ws, message.roomId, message.username, message.x, message.y);
         } else if (message.event == "broadcast") {
@@ -152,7 +155,7 @@ function sendFullData(roomId: string) {
                     roomId: roomId,
                     roomData: lobby[roomId]
                 })
-            );
+            )
         }
     });
 }
@@ -217,7 +220,7 @@ function createChat(username: string, roomId: string, genWord: string) {
         }
     });
 }
-
+// **********************************************************************
 function sendTurn(roomId: string, username: string) {
     const player = lobby[roomId]?.players[username];
 

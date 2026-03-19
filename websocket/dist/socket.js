@@ -14,6 +14,9 @@ wss.on("connection", function connection(ws) {
         const message = JSON.parse(data);
         if (message.event == "create") {
             createRoom(ws, message.roomId);
+            setInterval(() => {
+                changeEvent(message.roomId);
+            }, 5000);
         }
         else if (message.event == "join") {
             joinRoom(ws, message.roomId, message.username, message.x, message.y);
@@ -101,7 +104,7 @@ function sendFullData(roomId) {
             player.user.send(JSON.stringify({
                 event: "sendAll",
                 roomId: roomId,
-                roomData: lobby[roomId]?.players,
+                roomData: lobby[roomId]
             }));
         }
     });
@@ -152,6 +155,7 @@ function createChat(username, roomId, genWord) {
         }
     });
 }
+// **********************************************************************
 function sendTurn(roomId, username) {
     const player = lobby[roomId]?.players[username];
     if (!player)
