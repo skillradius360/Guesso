@@ -27,11 +27,12 @@ type RoomSchema = {
 
 export function Engine() {
     const canRef = useRef<HTMLCanvasElement>(null)
+    const ctxRef = useRef<CanvasRenderingContext2D>(null)
     const currSocket = Sockets()
     const chatContainerRef = useRef<HTMLDivElement>(null)
 
     const [err, setErr] = useState(false)
-   const [fullData, setFullData] = useState<Record<string, Player>>({});
+    const [fullData, setFullData] = useState<RoomSchema>({});
     const [guess, setGuess] = useState<string>("")
     const [chat, setChat] = useState<Array<{ username: string, roomId: string, word: string, isTrue: boolean }>>([])
     // const [words,genWords] =  useState<{"event":string,"roomId":string,"word":{"r1":string,"r2":string,"r3":string}}>({})
@@ -40,7 +41,7 @@ export function Engine() {
     const startPoint = useRef<coord | null>(null)
     const [searchParams] = useSearchParams()
 
-    const [words, setWords] = useState<{ "r1": string, "r2": string, "r3": string } | {}>({})
+    const [words, setWords] = useState<{ r1: string, r2: string, r3: string }>({ r1: "nigga", r2: "cigga", r3: "piga" })
     const [selectedWord, setSelectedWord] = useState<string>("")
     const [turn, setTurn] = useState<boolean>(false)
     const [turnUName, setTurnUName] = useState<string>("")
@@ -55,13 +56,13 @@ export function Engine() {
         }
     }, [chat])
 
-    function changeTurn(rId: string, uName: string) {
-        currSocket.current?.send(JSON.stringify({
-            "event": "switch",
-            "username": uName,
-            roomId: rId
-        }))
-    }
+    // function changeTurn(rId: string, uName: string) {
+    //     currSocket.current?.send(JSON.stringify({
+    //         "event": "switch",
+    //         "username": uName,
+    //         roomId: rId
+    //     }))
+    // }
 
     function getTurn() {
 
@@ -74,7 +75,9 @@ export function Engine() {
         const canvas = canRef.current
         if (!canvas) return
         const ctx = canvas.getContext("2d")
+        ctxRef.current = ctx
         if (!ctx) return
+
 
         ctx.beginPath()
         ctx.moveTo(from.x, from.y)
@@ -118,12 +121,18 @@ export function Engine() {
                     "event": "sendAll",
                     "roomId": roomId
                 }))
-                changeTurn(roomId, username)
-                setTurn(prev => !prev)
+                // changeTurn(roomId, username)
                 generateWord()
+                // setTurn(prev => !prev)
+
+                const canvasElem = ctxRef.current
+                if (!canvasElem) return
+                canvasElem.clearRect(0, 0, 800, 1000)
 
             }
-        }, 5000)
+
+        }, 10000)
+
 
         socket.onmessage = (message) => {
             const data = JSON.parse(message.data || "")
@@ -153,10 +162,10 @@ export function Engine() {
                 setWords(data.words)
                 console.log(words)
             }
-
+        
 
             if (data.event === "yourTurn") {
-                setTurn(true)
+                // setTurn(true)
                 setTurnUName(data.username)
             }
         }
@@ -174,8 +183,9 @@ export function Engine() {
         if (!rId || !user) return
 
         // Only allow drawing if user has "broadcast" status
-      const myStatus = fullData[user].eventType == "broadcast"
-        if (!myStatus ) return
+        const myStatus = fullData?.players[username].eventType=="broadcast"
+        console.log(myStatus)
+        if (!myStatus) return
 
         drawing.current = true
         const rect = e.currentTarget.getBoundingClientRect()
@@ -215,21 +225,21 @@ export function Engine() {
         }))
         setGuess("") //cleanup after the chats...
     }
+    // ****************************************************************************
 
+    // function handleModal(e: React.MouseEvent) {
+    //     if (selectedWord) {
+    //         setTurn(false)
+    //     }
 
-    function handleModal(e: React.MouseEvent) {
-        if (selectedWord) {
-            setTurn(false)
-        }
+    //     currSocket.current?.send(JSON.stringify({
+    //         event: "setSelectedWord",
+    //         word: selectedWord,
+    //         roomId: roomId
+    //     }))
+    // }
 
-        currSocket.current?.send(JSON.stringify({
-            event: "setSelectedWord",
-            word: selectedWord,
-            roomId:roomId
-        }))
-    }
-
-        function generateWord() {
+    function generateWord() {
         // const generatedWord = word_generator()
 
         // genWords({
@@ -273,30 +283,41 @@ export function Engine() {
                 <aside className="w-56 bg-slate-900 border border-slate-800 rounded-2xl p-4 hidden md:flex flex-col">
                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-tighter mb-4">Leaderboard</h2>
                     <div className="space-y-2 overflow-y-auto flex-1">
-                        {fullData && Object.entries(fullData).map(([name, player]) => (
-                            <div key={name} className={`flex justify-between items-center p-2 rounded-lg border ${name === username ? 'bg-indigo-500/10 border-indigo-500/50' : 'bg-slate-800 border-slate-700'}`}>
-                                <span className="text-sm font-medium truncate w-24">{name}</span>
-                                <span className="text-xs font-bold text-yellow-500">{player.score || 0}</span>
-                            </div>
-                        ))}
+                        {
+                            fullData && Object.entries(fullData).map(([_, players]) => {
+                                return Object.keys(players).map((name) => (
+                                    <div
+                                        key={name}
+                                        className={`flex justify-between items-center p-2 rounded-lg border ${name === username
+                                                ? 'bg-indigo-500/10 border-indigo-500/50'
+                                                : 'bg-slate-800 border-slate-700'
+                                            }`}
+                                    >
+                                        <span className="text-sm font-medium truncate w-24">{name}</span>
+                                        {/* <span className="text-xs font-bold text-yellow-500">
+                                            {players[name].score || 0}
+                                        </span> */}
+                                    </div>
+                                ));
+                            })
+                        }
                     </div>
                 </aside>
 
-                {/* Canvas Area */}
                 <main className="flex-1 bg-white rounded-2xl shadow-inner border-4 border-slate-900 relative overflow-hidden ">
 
-                    <SelectWordBox words={words} active={turn}
+                    {/* <SelectWordBox words={words} active={turn}
                         setSelectedWord={setSelectedWord}
                         handleModal={handleModal}
-                        turnUName={turnUName} 
+                        turnUName={turnUName}
                         username={username}
-                        />
+                    /> */}
 
 
                     <canvas
                         ref={canRef}
-                        width={1000} // High resolution internal
-                        height={800}
+                        width={600} // High resolution internal
+                        height={1000}
                         className="w-full h-full cursor-crosshair"
                         onMouseDown={handleMouseDown}
                         onMouseMove={handleMouseMove}
@@ -350,18 +371,18 @@ function TextBox({ username, word, isTrue }: { username: string, word: string, i
     )
 }
 
-function SelectWordBox({ words, active, setSelectedWord, handleModal, turnUName ,username}: {
+function SelectWordBox({ words, active, setSelectedWord, handleModal, turnUName, username }: {
     words: Record<string, string>,
     active: boolean,
     setSelectedWord: React.Dispatch<React.SetStateAction<string>>,
     handleModal: (e: React.MouseEvent) => void,
     turnUName: string,
-    username:string
+    username: string
 }) {
 
     return (
         <>
-            <div className={` w-full absolute top-75 bottom-25 left-65 right-25 z-100 ${turnUName==username ? `hidden` : `flex`}`}>
+            <div className={` w-full absolute top-75 bottom-25 left-65 right-25 z-100 ${turnUName == username && active ? `hidden` : `flex`}`}>
 
                 <div className={`h-1/2 w-[70%] border-4 border-blue-500 border-solid rounded-2xl 
             bg-blue-800 opacity-80 
