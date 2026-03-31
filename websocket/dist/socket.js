@@ -14,9 +14,12 @@ wss.on("connection", function connection(ws) {
         const message = JSON.parse(data);
         if (message.event == "create") {
             createRoom(ws, message.roomId);
-            setInterval(() => {
+            Promise.resolve(setInterval(() => {
+                sendGenWord(message.username, message.roomId);
+                console.log("sent generated word");
+            }, 10000)).then(() => {
                 changeEvent(message.roomId);
-            }, 5000);
+            });
         }
         else if (message.event == "join") {
             joinRoom(ws, message.roomId, message.username, message.x, message.y);
@@ -29,11 +32,9 @@ wss.on("connection", function connection(ws) {
         }
         else if (message.event == "sendAll") {
             sendFullData(message.roomId);
-        }
-        else if (message.event == "generateWord") {
-            sendGenWord(ws);
-        }
-        else if (message.event == "setSelectedWord") {
+            // } else if (message.event == "generateWord") {
+            //     sendGenWord(ws);
+            // } else if (message.event == "setSelectedWord") {
             generatedWord = message.word;
             if (lobby[message.roomId]) {
                 lobby[message.roomId].generatedWord = message.word;
@@ -167,13 +168,18 @@ function sendTurn(roomId, username) {
         }));
     }
 }
-function sendGenWord(ws) {
+function sendGenWord(username, roomId) {
     let word = (0, words_1.word_generator)();
-    ws.send(JSON.stringify({
+    const player = lobby[roomId]?.players[username]?.user.send(JSON.stringify({
         event: "generatedData",
         words: word,
     }));
 }
+// function showModal(username:string,roomId:string){
+// const player = lobby[roomId]?.players[username]
+// player?.user.send(JSON.stringify({
+// }))
+// }
 server.listen(3000);
 console.log("listening on 3000");
 //# sourceMappingURL=socket.js.map

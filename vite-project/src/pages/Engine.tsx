@@ -122,8 +122,9 @@ export function Engine() {
                     "roomId": roomId
                 }))
                 // changeTurn(roomId, username)
-                generateWord()
-                // setTurn(prev => !prev)
+                // generateWord()
+                setTurn(prev => !prev)
+                console.log(turn)
 
                 const canvasElem = ctxRef.current
                 if (!canvasElem) return
@@ -140,7 +141,7 @@ export function Engine() {
             if (data.event === "sendAll") {
                 setFullData(data.roomData)
                 console.log(data.roomData)
-                setTurn(false)
+                // setTurn(false)
             }
 
             if (data.event === "broadcast" && data.eventType !== "broadcast") {
@@ -227,32 +228,19 @@ export function Engine() {
     }
     // ****************************************************************************
 
-    // function handleModal(e: React.MouseEvent) {
-    //     if (selectedWord) {
-    //         setTurn(false)
-    //     }
+    function handleModal(e: React.MouseEvent) {
+        if (selectedWord) {
+            setTurn(false)
+        }
 
-    //     currSocket.current?.send(JSON.stringify({
-    //         event: "setSelectedWord",
-    //         word: selectedWord,
-    //         roomId: roomId
-    //     }))
-    // }
-
-    function generateWord() {
-        // const generatedWord = word_generator()
-
-        // genWords({
-        //     "event": "generateWord",
-        //     "roomId": rId,
-        //     "word": generatedWord
-        // })
-        // setWords(word_generator)
         currSocket.current?.send(JSON.stringify({
-            "event": "generateWord"
-
+            event: "setSelectedWord",
+            word: selectedWord,
+            roomId: roomId
         }))
     }
+
+
 
     return (
         <div className="flex flex-col h-screen bg-slate-950 text-slate-100 p-4 font-sans  w-screen "  >
@@ -306,12 +294,12 @@ export function Engine() {
 
                 <main className="flex-1 bg-white rounded-2xl shadow-inner border-4 border-slate-900 relative overflow-hidden ">
 
-                    {/* <SelectWordBox words={words} active={turn}
+                    <SelectWordBox words={words} active={turn }
                         setSelectedWord={setSelectedWord}
                         handleModal={handleModal}
                         turnUName={turnUName}
                         username={username}
-                    /> */}
+                    />
 
 
                     <canvas
@@ -382,7 +370,7 @@ function SelectWordBox({ words, active, setSelectedWord, handleModal, turnUName,
 
     return (
         <>
-            <div className={` w-full absolute top-75 bottom-25 left-65 right-25 z-100 ${turnUName == username && active ? `hidden` : `flex`}`}>
+            <div className={` w-full absolute top-75 bottom-25 left-65 right-25 z-100 ${ active ? `flex` : `hidden`}`}>
 
                 <div className={`h-1/2 w-[70%] border-4 border-blue-500 border-solid rounded-2xl 
             bg-blue-800 opacity-80 

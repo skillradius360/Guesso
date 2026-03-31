@@ -47,9 +47,18 @@ wss.on("connection", function connection(ws) {
 
         if (message.event == "create") {
             createRoom(ws, message.roomId);
-            setInterval(()=>{
-                changeEvent(message.roomId)
-            },5000)
+
+            Promise.resolve(
+                setInterval(()=>{
+                    sendGenWord(message.username,message.roomId)
+                    console.log("sent generated word")
+                },10000)
+            ).then(()=>{
+            changeEvent(message.roomId)
+            })
+            
+
+
         } else if (message.event == "join") {
             joinRoom(ws, message.roomId, message.username, message.x, message.y);
         } else if (message.event == "broadcast") {
@@ -58,9 +67,9 @@ wss.on("connection", function connection(ws) {
             changeEvent(message.roomId);
         } else if (message.event == "sendAll") {
             sendFullData(message.roomId);
-        } else if (message.event == "generateWord") {
-            sendGenWord(ws);
-        } else if (message.event == "setSelectedWord") {
+        // } else if (message.event == "generateWord") {
+        //     sendGenWord(ws);
+        // } else if (message.event == "setSelectedWord") {
             generatedWord = message.word;
             if (lobby[message.roomId]) {
                 lobby[message.roomId]!.generatedWord = message.word;
@@ -236,16 +245,25 @@ function sendTurn(roomId: string, username: string) {
     }
 }
 
-function sendGenWord(ws: WebSocket) {
+function sendGenWord(username:string,roomId:string) {
     let word = word_generator();
+const player = lobby[roomId]?.players[username]?.user.send(    
+            JSON.stringify({
+                event: "generatedData",
+                words: word,
+            })
+        );
 
-    ws.send(
-        JSON.stringify({
-            event: "generatedData",
-            words: word,
-        })
-    );
+
 }
 
+
+// function showModal(username:string,roomId:string){
+// const player = lobby[roomId]?.players[username]
+// player?.user.send(JSON.stringify({
+
+// }))
+
+// }
 server.listen(3000);
 console.log("listening on 3000");
