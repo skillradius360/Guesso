@@ -42,7 +42,6 @@ export function Engine() {
     const [searchParams] = useSearchParams()
 
     const [words, setWords] = useState<{ r1: string, r2: string, r3: string }>({ r1: "nigga", r2: "cigga", r3: "piga" })
-    const [selectedWord, setSelectedWord] = useState<string>("")
     const [turn, setTurn] = useState<boolean>(false)
     const [turnUName, setTurnUName] = useState<string>("")
 
@@ -56,18 +55,13 @@ export function Engine() {
         }
     }, [chat])
 
-    // function changeTurn(rId: string, uName: string) {
-    //     currSocket.current?.send(JSON.stringify({
-    //         "event": "switch",
-    //         "username": uName,
-    //         roomId: rId
-    //     }))
-    // }
-
-    function getTurn() {
-
+    function changeTurn(rId: string, uName: string) {
+        currSocket.current?.send(JSON.stringify({
+            "event": "switch",
+            "username": uName,
+            roomId: rId
+        }))
     }
-
 
 
 
@@ -121,7 +115,7 @@ export function Engine() {
                     "event": "sendAll",
                     "roomId": roomId
                 }))
-                // changeTurn(roomId, username)
+                changeTurn(roomId, username)
                 // generateWord()
                 setTurn(prev => !prev)
                 console.log(turn)
@@ -163,7 +157,7 @@ export function Engine() {
                 setWords(data.words)
                 console.log(words)
             }
-        
+
 
             if (data.event === "yourTurn") {
                 // setTurn(true)
@@ -184,7 +178,7 @@ export function Engine() {
         if (!rId || !user) return
 
         // Only allow drawing if user has "broadcast" status
-        const myStatus = fullData?.players[username].eventType=="broadcast"
+        const myStatus = fullData?.players[username].eventType == "broadcast"
         console.log(myStatus)
         if (!myStatus) return
 
@@ -228,14 +222,14 @@ export function Engine() {
     }
     // ****************************************************************************
 
-    function handleModal(e: React.MouseEvent) {
-        if (selectedWord) {
-            setTurn(false)
-        }
+    function handleModal(e: React.MouseEvent, value: string) {
+        // if (selectedWord) {
+
+        // }
 
         currSocket.current?.send(JSON.stringify({
             event: "setSelectedWord",
-            word: selectedWord,
+            word: value,
             roomId: roomId
         }))
     }
@@ -268,7 +262,7 @@ export function Engine() {
             </header>
 
             <div className="flex flex-1 gap-4 overflow-hidden">
-                <aside className="w-56 bg-slate-900 border border-slate-800 rounded-2xl p-4 hidden md:flex flex-col">
+                <aside className="w-34 bg-slate-900 border border-slate-800 rounded-2xl p-4 hidden md:flex flex-col">
                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-tighter mb-4">Leaderboard</h2>
                     <div className="space-y-2 overflow-y-auto flex-1">
                         {
@@ -277,11 +271,11 @@ export function Engine() {
                                     <div
                                         key={name}
                                         className={`flex justify-between items-center p-2 rounded-lg border ${name === username
-                                                ? 'bg-indigo-500/10 border-indigo-500/50'
-                                                : 'bg-slate-800 border-slate-700'
+                                            ? 'bg-indigo-500/10 border-indigo-500/50'
+                                            : 'bg-slate-800 border-slate-700'
                                             }`}
                                     >
-                                        <span className="text-sm font-medium truncate w-24">{name}</span>
+                                        <span className="text-sm font-medium truncate w-20">{name}</span>
                                         {/* <span className="text-xs font-bold text-yellow-500">
                                             {players[name].score || 0}
                                         </span> */}
@@ -294,11 +288,12 @@ export function Engine() {
 
                 <main className="flex-1 bg-white rounded-2xl shadow-inner border-4 border-slate-900 relative overflow-hidden ">
 
-                    <SelectWordBox words={words} active={turn }
-                        setSelectedWord={setSelectedWord}
+                    <SelectWordBox words={words} active={turn}
+                        // setSelectedWord={setSelectedWord}
                         handleModal={handleModal}
                         turnUName={turnUName}
                         username={username}
+                        setTurn={setTurn}
                     />
 
 
@@ -315,7 +310,7 @@ export function Engine() {
                 </main>
 
                 {/* Chat Area */}
-                <aside className="w-80 flex flex-col bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+                <aside className="w-60 flex flex-col bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
                     <div className="p-3 border-b border-slate-800 font-bold text-xs text-slate-500 uppercase">Live Chat</div>
 
                     <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth">
@@ -359,18 +354,18 @@ function TextBox({ username, word, isTrue }: { username: string, word: string, i
     )
 }
 
-function SelectWordBox({ words, active, setSelectedWord, handleModal, turnUName, username }: {
-    words: Record<string, string>,
-    active: boolean,
-    setSelectedWord: React.Dispatch<React.SetStateAction<string>>,
-    handleModal: (e: React.MouseEvent) => void,
-    turnUName: string,
-    username: string
-}) {
+function SelectWordBox({ words, active,handleModal, setTurn }: {
+        words: Record<string, string>,
+        active: boolean,
+        handleModal: (e: React.MouseEvent, value: string) => void,
+        turnUName: string,
+        username: string, 
+        setTurn: React.Dispatch<React.SetStateAction<boolean>>
+    }) {
 
     return (
         <>
-            <div className={` w-full absolute top-75 bottom-25 left-65 right-25 z-100 ${ active ? `flex` : `hidden`}`}>
+            <div className={` w-full absolute top-75 bottom-25 left-65 right-25 z-100 ${active ? `flex` : `hidden`}`}>
 
                 <div className={`h-1/2 w-[70%] border-4 border-blue-500 border-solid rounded-2xl 
             bg-blue-800 opacity-80 
@@ -380,8 +375,10 @@ function SelectWordBox({ words, active, setSelectedWord, handleModal, turnUName,
 
 
                         <button key={key} className='border-2 border-solid border-blue-500 px-2 py-1.5 rounded-xl' onClick={e => {
-                            setSelectedWord(value)
-                            handleModal(e)
+                            // setSelectedWord(value)
+                            console.log(value)
+                            handleModal(e, value)
+                            setTurn(prev => !prev)
                         }}>{value}</button>
 
                     ))}

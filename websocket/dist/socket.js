@@ -34,10 +34,12 @@ wss.on("connection", function connection(ws) {
             sendFullData(message.roomId);
             // } else if (message.event == "generateWord") {
             //     sendGenWord(ws);
-            // } else if (message.event == "setSelectedWord") {
-            generatedWord = message.word;
+        }
+        else if (message.event == "setSelectedWord") {
+            // generatedWord = message.word;
             if (lobby[message.roomId]) {
                 lobby[message.roomId].generatedWord = message.word;
+                console.log(message.word);
             }
         }
         else if (message.event == "createChat") {

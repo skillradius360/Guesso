@@ -67,12 +67,12 @@ wss.on("connection", function connection(ws) {
             changeEvent(message.roomId);
         } else if (message.event == "sendAll") {
             sendFullData(message.roomId);
-        // } else if (message.event == "generateWord") {
-        //     sendGenWord(ws);
-        // } else if (message.event == "setSelectedWord") {
-            generatedWord = message.word;
+    
+        } else if (message.event == "setSelectedWord") {
+            // generatedWord = message.word;
             if (lobby[message.roomId]) {
                 lobby[message.roomId]!.generatedWord = message.word;
+                console.log(message.word)
             }
         } else if (message.event == "createChat") {
             createChat(message.username, message.roomId, message.word);
@@ -206,7 +206,7 @@ function createChat(username: string, roomId: string, genWord: string) {
         roomChat[roomId] = {};
     }
 
-    const correct = genWord == lobby[roomId].generatedWord;
+    const correct = genWord == lobby[roomId].generatedWord
 
     roomChat[roomId][username] = {
         username,
@@ -253,17 +253,7 @@ const player = lobby[roomId]?.players[username]?.user.send(
                 words: word,
             })
         );
-
-
 }
 
-
-// function showModal(username:string,roomId:string){
-// const player = lobby[roomId]?.players[username]
-// player?.user.send(JSON.stringify({
-
-// }))
-
-// }
 server.listen(3000);
 console.log("listening on 3000");
