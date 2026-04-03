@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-// import { word_generator } from '../utils/generator'
 import { Link } from 'react-router-dom'
 import { Sockets } from '../utils/Sockets'
 
@@ -241,12 +240,12 @@ export function Engine() {
 
 
             {/* Top Navigation */}
-            <header className="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl mb-4">
+            <header className="flex justify-between items-center bg-slate-900 border border-slate-800 p-1 rounded-2xl shadow-xl mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="bg-indigo-600 p-2 rounded-lg font-black italic"><Link to={"/"}>G</Link></div>
+                    <div className="bg-indigo-600 px-4 py-2 rounded-4xl mx-3 font-black italic text-3xl"><Link to={"/"}>G</Link></div>
                     <div>
                         <h1 className="text-md font-bold leading-none">Guesso</h1>
-                        <span className="text-[10px] text-slate-500 uppercase tracking-widest">Room: {roomId}</span>
+                        <span className="text-sm text-blue-600 uppercase tracking-widest">Room: {roomId}</span>
                     </div>
                 </div>
 
@@ -276,9 +275,7 @@ export function Engine() {
                                             }`}
                                     >
                                         <span className="text-sm font-medium truncate w-20">{name}</span>
-                                        {/* <span className="text-xs font-bold text-yellow-500">
-                                            {players[name].score || 0}
-                                        </span> */}
+                                    
                                     </div>
                                 ));
                             })

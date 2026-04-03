@@ -32,8 +32,6 @@ wss.on("connection", function connection(ws) {
         }
         else if (message.event == "sendAll") {
             sendFullData(message.roomId);
-            // } else if (message.event == "generateWord") {
-            //     sendGenWord(ws);
         }
         else if (message.event == "setSelectedWord") {
             // generatedWord = message.word;
@@ -177,11 +175,6 @@ function sendGenWord(username, roomId) {
         words: word,
     }));
 }
-// function showModal(username:string,roomId:string){
-// const player = lobby[roomId]?.players[username]
-// player?.user.send(JSON.stringify({
-// }))
-// }
 server.listen(3000);
 console.log("listening on 3000");
 //# sourceMappingURL=socket.js.map

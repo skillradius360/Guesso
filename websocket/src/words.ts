@@ -2,16 +2,16 @@
 export function word_generator() {
 
     const words = [
-    "Sun", "Moon", "Star", "Cloud", "Rain", "Rainbow", "Tree", "Flower", "Leaf", "Mountain",
-    "River", "Ocean", "Island", "Volcano", "Desert", "House", "Hut", "Castle", "Bridge", "Road",
-    "Car", "Bus", "Train", "Airplane", "Boat", "Bicycle", "Rocket", "Robot", "Computer", "Phone",
-    "Book", "Pencil", "Pen", "Eraser", "Backpack", "Clock", "Key", "Lock", "Door", "Window",
-    "Chair", "Table", "Bed", "Lamp", "Fan", "Television", "Camera", "Microphone", "Headphones", "Speaker",
-    "Apple", "Banana", "Mango", "Orange", "Grapes", "Cake", "Pizza", "Bread", "IceCream", "Cup",
-    "Bottle", "Plate", "Spoon", "Fork", "Knife", "Dog", "Cat", "Fish", "Bird", "Butterfly",
-    "Bee", "Ant", "Elephant", "Lion", "Tiger", "Horse", "Cow", "Sheep", "Chicken", "Turtle",
-    "Snake", "Spider", "Crab", "Octopus", "Ball", "Hat", "Glasses", "Umbrella", "Flag", "Gift",
-    "Candle", "Balloon", "Drum", "Guitar", "Piano", "Helmet", "Shoe", "Sock", "Ring", "Crown"
+    "sun", "moon", "star", "cloud", "rain", "rainbow", "tree", "flower", "leaf", "mountain",
+    "river", "ocean", "island", "volcano", "desert", "house", "hut", "castle", "bridge", "road",
+    "car", "bus", "train", "airplane", "boat", "bicycle", "rocket", "robot", "computer", "phone",
+    "book", "pencil", "pen", "eraser", "backpack", "clock", "key", "lock", "door", "window",
+    "chair", "table", "bed", "lamp", "fan", "television", "camera", "microphone", "headphones", "speaker",
+    "apple", "banana", "mango", "orange", "grapes", "cake", "pizza", "bread", "icecream", "cup",
+    "bottle", "plate", "spoon", "fork", "knife", "dog", "cat", "fish", "bird", "butterfly",
+    "bee", "ant", "elephant", "lion", "tiger", "horse", "cow", "sheep", "chicken", "turtle",
+    "snake", "spider", "crab", "octopus", "ball", "hat", "glasses", "umbrella", "flag", "gift",
+    "candle", "balloon", "drum", "guitar", "piano", "helmet", "shoe", "sock", "ring", "crown"
 ]
 
     const randomNum1 = Math.floor(Math.random() * words.length)
